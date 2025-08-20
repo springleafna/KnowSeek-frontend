@@ -22,7 +22,10 @@ export const userApi = {
     });
   },
   logout() {
-    return http.post('/user/logout');
+    return http.post('/user/logout').finally(() => {
+      // 无论退出登录是否成功，都清理本地token
+      tokenUtils.removeToken();
+    });
   },
   getUserInfo() {
     return http.get('/user/info');
@@ -54,15 +57,25 @@ export const fileApi = {
   },
   
   // 上传文件分片
-  uploadChunk(chunkUrl, chunk, onProgress) {
-    const formData = new FormData();
-    formData.append('file', chunk);
-    
-    return http.post(chunkUrl, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      onUploadProgress: onProgress
+  uploadChunk(params) {
+    return http.post('/file/chunk', {
+      uploadId: params.uploadId,
+      chunkIndex: params.chunkIndex,
+      fileName: params.fileName,
+      chunkMd5: params.chunkMd5,
+      ETag: params.ETag,
+      chunkSize: params.chunkSize
+    });
+  },
+  
+  // 完成分片上传，进行合并
+  completeUpload(params) {
+    return http.post('/file/complete', {
+      uploadId: params.uploadId,
+      fileName: params.fileName,
+      fileMd5: params.fileMd5,
+      chunkTotal: params.chunkTotal,
+      chunkMd5List: params.chunkMd5List
     });
   },
   
@@ -99,6 +112,25 @@ export const fileApi = {
 
       loadNext();
     });
+  },
+  
+  // 计算分片MD5
+  calculateChunkMD5(chunk) {
+    return new Promise((resolve, reject) => {
+      const spark = new SparkMD5.ArrayBuffer();
+      const fileReader = new FileReader();
+
+      fileReader.onload = function(e) {
+        spark.append(e.target.result);
+        resolve(spark.end());
+      };
+
+      fileReader.onerror = function() {
+        reject(new Error('分片读取失败'));
+      };
+
+      fileReader.readAsArrayBuffer(chunk);
+    });
   }
 };
 
@@ -117,3 +149,10 @@ export const logout = userApi.logout;
 export const isLoggedIn = tokenUtils.isLoggedIn;
 export const getToken = tokenUtils.getToken;
 export const clearToken = tokenUtils.removeToken;
+
+// 文件上传相关具名导出
+export const initUpload = fileApi.initUpload;
+export const uploadChunk = fileApi.uploadChunk;
+export const completeUpload = fileApi.completeUpload;
+export const calculateFileMD5 = fileApi.calculateFileMD5;
+export const calculateChunkMD5 = fileApi.calculateChunkMD5;

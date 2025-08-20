@@ -27,10 +27,19 @@ httpClient.interceptors.request.use(
     if (!isPublicRequest(config.url)) {
       const token = localStorage.getItem('token');
       if (token) {
-        // Sa-Token 默认前端携带 Cookie 即可，也可通过自定义请求头 satoken 传递
-        // 这里同时设置 Authorization 兼容后端网关，优先按项目约定修改
-        config.headers['satoken'] = token;
-        config.headers['Authorization'] = `Bearer ${token}`;
+        // 根据Sa-Token配置，token-name为Authorization，直接传递token值（不添加Bearer前缀）
+        config.headers['Authorization'] = token;
+        
+        // 调试信息
+        console.log('发送请求携带token:', {
+          url: config.url,
+          token: token,
+          headers: {
+            authorization: config.headers['Authorization']
+          }
+        });
+      } else {
+        console.warn('请求需要token但本地没有token:', config.url);
       }
     }
     return config;

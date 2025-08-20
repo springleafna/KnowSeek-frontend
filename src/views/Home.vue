@@ -22,6 +22,12 @@
         
         <!-- 错误信息 -->
         <p v-if="uploadStatus.error" class="error-message">{{ uploadStatus.error }}</p>
+        
+        <!-- 上传信息 -->
+        <div v-if="uploadStatus.uploading && uploadStatus.uploadId" class="upload-info">
+          <p>上传ID: {{ uploadStatus.uploadId }}</p>
+          <p>分片进度: {{ uploadStatus.uploadedChunks.size }}/{{ uploadStatus.totalChunks }}</p>
+        </div>
       </div>
     </section>
 
@@ -47,7 +53,6 @@ const uploadStatus = reactive({
   currentChunk: 0,
   totalChunks: 0,
   uploadId: '',
-  partUploadUrls: {},
   chunkSize: 2 * 1024 * 1024, // 2MB 分片大小
   uploadedChunks: new Set(),
   error: ''
@@ -93,12 +98,16 @@ const handleUpload = async () => {
       return;
     }
     
-    // 5. 保存上传ID和分片上传URL
+    // 5. 保存上传ID
     uploadStatus.uploadId = initResult.uploadId;
-    uploadStatus.partUploadUrls = initResult.partUploadUrls;
     
     // 6. 开始分片上传
-    await uploadChunks(file);
+    const completeResult = await uploadChunks(file);
+    
+    // 7. 显示上传结果
+    if (completeResult.location) {
+      console.log('文件上传成功，访问地址:', completeResult.location);
+    }
     
     alert('文件上传成功！');
   } catch (error) {
@@ -107,42 +116,59 @@ const handleUpload = async () => {
     alert(`上传失败: ${uploadStatus.error}`);
   } finally {
     uploadStatus.uploading = false;
+    uploadStatus.progress = 0;
   }
 };
 
 // 上传所有分片
 const uploadChunks = async (file) => {
-  const chunkPromises = [];
+  const chunkMd5List = [];
   
   for (let i = 0; i < uploadStatus.totalChunks; i++) {
     const start = i * uploadStatus.chunkSize;
     const end = Math.min(file.size, start + uploadStatus.chunkSize);
     const chunk = file.slice(start, end);
     
-    // 获取当前分片的上传URL
-    const uploadUrl = uploadStatus.partUploadUrls[i + 1]; // 注意：后端分片索引从1开始
-    
-    if (!uploadUrl) {
-      throw new Error(`分片${i+1}的上传URL不存在`);
-    }
-    
-    // 创建上传Promise
-    const uploadPromise = fileApi.uploadChunk(uploadUrl, chunk, (progressEvent) => {
-      // 计算单个分片的上传进度
-      const chunkProgress = progressEvent.loaded / progressEvent.total;
-      // 更新总体进度
-      updateTotalProgress();
-    }).then(() => {
+    try {
+      // 计算分片MD5
+      const chunkMd5 = await fileApi.calculateChunkMD5(chunk);
+      chunkMd5List.push(chunkMd5);
+      
+      // 上传分片
+      const chunkResult = await fileApi.uploadChunk({
+        uploadId: uploadStatus.uploadId,
+        chunkIndex: i + 1, // 后端分片索引从1开始
+        fileName: file.name,
+        chunkMd5: chunkMd5,
+        ETag: `etag-${i + 1}`, // 这里需要根据实际情况获取ETag
+        chunkSize: chunk.size
+      });
+      
       // 标记分片已上传
       uploadStatus.uploadedChunks.add(i);
       updateTotalProgress();
-    });
-    
-    chunkPromises.push(uploadPromise);
+      
+    } catch (error) {
+      console.error(`分片${i + 1}上传失败:`, error);
+      throw new Error(`分片${i + 1}上传失败: ${error.message}`);
+    }
   }
   
-  // 等待所有分片上传完成
-  await Promise.all(chunkPromises);
+  // 所有分片上传完成后，调用完成接口
+  const completeResult = await fileApi.completeUpload({
+    uploadId: uploadStatus.uploadId,
+    fileName: file.name,
+    fileMd5: await fileApi.calculateFileMD5(file),
+    chunkTotal: uploadStatus.totalChunks,
+    chunkMd5List: chunkMd5List
+  });
+  
+  // 检查是否需要重新上传某些分片
+  if (completeResult.reUpload && completeResult.pendingChunkIndexList.length > 0) {
+    throw new Error(`需要重新上传分片: ${completeResult.pendingChunkIndexList.join(', ')}`);
+  }
+  
+  return completeResult;
 };
 
 // 更新总体上传进度
@@ -153,10 +179,24 @@ const updateTotalProgress = () => {
 
 const handleLogout = async () => {
   try {
-    await userApi.logout();
-  } catch (_) {}
-  tokenUtils.removeToken();
-  router.push('/login');
+    console.log('开始退出登录...');
+    const result = await userApi.logout();
+    console.log('退出登录成功:', result);
+  } catch (error) {
+    console.error('退出登录失败:', error);
+    console.error('错误详情:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    // 即使退出登录失败，也要清理本地token并跳转
+  } finally {
+    // 确保清理本地token
+    tokenUtils.removeToken();
+    console.log('已清理本地token');
+    // 跳转到登录页
+    router.push('/login');
+  }
 };
 </script>
 
@@ -231,5 +271,18 @@ button:disabled {
 .error-message {
   color: #ff4d4f;
   margin-top: 10px;
+}
+
+.upload-info {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.upload-info p {
+  margin: 5px 0;
+  color: #666;
 }
 </style>
