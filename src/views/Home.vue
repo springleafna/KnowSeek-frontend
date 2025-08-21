@@ -102,7 +102,7 @@ const handleUpload = async () => {
     uploadStatus.uploadId = initResult.uploadId;
     
     // 6. 开始分片上传
-    const completeResult = await uploadChunks(file);
+    const completeResult = await uploadChunks(file, initResult.partUploadUrls);
     
     // 7. 显示上传结果
     if (completeResult.location) {
@@ -121,40 +121,68 @@ const handleUpload = async () => {
 };
 
 // 上传所有分片
-const uploadChunks = async (file) => {
+const uploadChunks = async (file, partUploadUrls) => {
   const chunkMd5List = [];
   
-  // 是否应该是异步上传？
+  // 顺序直传 OSS 分片
   for (let i = 0; i < uploadStatus.totalChunks; i++) {
     const start = i * uploadStatus.chunkSize;
     const end = Math.min(file.size, start + uploadStatus.chunkSize);
     const chunk = file.slice(start, end);
+
+    // 取预签名直传URL（后端Map<Integer, String>，索引从1开始，键可能是数字或字符串）
+    const partIndex = i + 1;
+    const url = partUploadUrls?.[partIndex] || partUploadUrls?.[String(partIndex)];
+    if (!url) {
+      throw new Error(`缺少分片 ${partIndex} 的预签名URL`);
+    }
     
     try {
-      // 先上传分片到阿里云OSS获取ETag和索引
+      // 直传到阿里云 OSS（PUT）
+      const response = await fetch(url, {
+        method: 'PUT',
+        body: chunk,
+      });
 
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`OSS直传失败（分片${partIndex}）：${response.status} ${response.statusText} ${text}`);
+      }
 
-      // 计算分片MD5
+      // 计算分片MD5（用于后端完整性校验）
       const chunkMd5 = await fileApi.calculateChunkMD5(chunk);
       chunkMd5List.push(chunkMd5);
-      
-      // 将分片信息发送到到服务端进行保存
-      const chunkResult = await fileApi.uploadChunk({
+
+      // 调试：打印所有响应头，帮助定位 CORS 暴露问题
+      try {
+        console.debug('OSS响应头（分片' + partIndex + '）:', Array.from(response.headers.entries()));
+      } catch (_) {}
+
+      // 获取 OSS 返回的 ETag；如未暴露则回退为分片MD5
+      let eTag = response.headers.get('ETag') || response.headers.get('etag') || '';
+      if (eTag) {
+        eTag = eTag.replace(/^\"|\"$/g, '');
+      } else {
+        console.warn('未获取到 ETag，回退使用分片MD5（请确认Bucket CORS已在 ExposeHeader 暴露 ETag）');
+        eTag = chunkMd5;
+      }
+      console.log('ETag(分片' + partIndex + '):', eTag);
+
+      // 将分片信息上报服务端（保存 ETag 等信息）
+      await fileApi.uploadChunk({
         uploadId: uploadStatus.uploadId,
-        chunkIndex: i + 1, // 后端分片索引从1开始
-        fileName: file.name,
-        chunkMd5: chunkMd5,
-        ETag: `etag-${i + 1}`,
+        chunkIndex: partIndex,
+        ETag: eTag,
         chunkSize: chunk.size
       });
       
-      // 标记分片已上传
+      // 标记分片已上传并更新进度
       uploadStatus.uploadedChunks.add(i);
       updateTotalProgress();
       
     } catch (error) {
-      console.error(`分片${i + 1}上传失败:`, error);
-      throw new Error(`分片${i + 1}上传失败: ${error.message}`);
+      console.error(`分片${partIndex}上传失败:`, error);
+      throw new Error(`分片${partIndex}上传失败: ${error.message}`);
     }
   }
   
@@ -162,9 +190,7 @@ const uploadChunks = async (file) => {
   const completeResult = await fileApi.completeUpload({
     uploadId: uploadStatus.uploadId,
     fileName: file.name,
-    fileMd5: await fileApi.calculateFileMD5(file),
-    chunkTotal: uploadStatus.totalChunks,
-    chunkMd5List: chunkMd5List
+    chunkTotalSize: uploadStatus.totalChunks
   });
   
   // 检查是否需要重新上传某些分片

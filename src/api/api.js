@@ -61,8 +61,6 @@ export const fileApi = {
     return http.post('/file/chunk', {
       uploadId: params.uploadId,
       chunkIndex: params.chunkIndex,
-      fileName: params.fileName,
-      chunkMd5: params.chunkMd5,
       ETag: params.ETag,
       chunkSize: params.chunkSize
     });
@@ -73,9 +71,7 @@ export const fileApi = {
     return http.post('/file/complete', {
       uploadId: params.uploadId,
       fileName: params.fileName,
-      fileMd5: params.fileMd5,
-      chunkTotal: params.chunkTotal,
-      chunkMd5List: params.chunkMd5List
+      chunkTotalSize: params.chunkTotalSize
     });
   },
   
