@@ -124,23 +124,27 @@ const handleUpload = async () => {
 const uploadChunks = async (file) => {
   const chunkMd5List = [];
   
+  // 是否应该是异步上传？
   for (let i = 0; i < uploadStatus.totalChunks; i++) {
     const start = i * uploadStatus.chunkSize;
     const end = Math.min(file.size, start + uploadStatus.chunkSize);
     const chunk = file.slice(start, end);
     
     try {
+      // 先上传分片到阿里云OSS获取ETag和索引
+
+
       // 计算分片MD5
       const chunkMd5 = await fileApi.calculateChunkMD5(chunk);
       chunkMd5List.push(chunkMd5);
       
-      // 上传分片
+      // 将分片信息发送到到服务端进行保存
       const chunkResult = await fileApi.uploadChunk({
         uploadId: uploadStatus.uploadId,
         chunkIndex: i + 1, // 后端分片索引从1开始
         fileName: file.name,
         chunkMd5: chunkMd5,
-        ETag: `etag-${i + 1}`, // 这里需要根据实际情况获取ETag
+        ETag: `etag-${i + 1}`,
         chunkSize: chunk.size
       });
       
