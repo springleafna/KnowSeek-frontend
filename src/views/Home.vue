@@ -7,6 +7,20 @@
       <div class="upload-box">
         <input type="file" @change="onFileChange" :disabled="uploadStatus.uploading" />
         <p v-if="selectedFileName">已选择：{{ selectedFileName }}</p>
+        
+        <!-- 并发数设置 -->
+        <div class="concurrency-setting" v-if="selectedFile && !uploadStatus.uploading">
+          <label>并发数：</label>
+          <select v-model="uploadStatus.maxConcurrency" :disabled="uploadStatus.uploading">
+            <option value="1">1个分片</option>
+            <option value="2">2个分片</option>
+            <option value="3">3个分片</option>
+            <option value="5">5个分片</option>
+            <option value="8">8个分片</option>
+          </select>
+          <span class="concurrency-hint">（建议根据网络情况调整）</span>
+        </div>
+        
         <button 
           :disabled="!selectedFile || uploadStatus.uploading" 
           @click="handleUpload"
@@ -27,6 +41,8 @@
         <div v-if="uploadStatus.uploading && uploadStatus.uploadId" class="upload-info">
           <p>上传ID: {{ uploadStatus.uploadId }}</p>
           <p>分片进度: {{ uploadStatus.uploadedChunks.size }}/{{ uploadStatus.totalChunks }}</p>
+          <p>并发上传: 最多{{ uploadStatus.maxConcurrency }}个分片同时上传</p>
+          <p>分片大小: {{ (uploadStatus.chunkSize / 1024 / 1024).toFixed(1) }}MB</p>
         </div>
       </div>
     </section>
@@ -53,7 +69,8 @@ const uploadStatus = reactive({
   currentChunk: 0,
   totalChunks: 0,
   uploadId: '',
-  chunkSize: 2 * 1024 * 1024, // 2MB 分片大小
+  chunkSize: 2 * 1024 * 1024, // 10MB 分片大小
+  maxConcurrency: 3, // 最大并发数
   uploadedChunks: new Set(),
   error: ''
 });
@@ -120,70 +137,108 @@ const handleUpload = async () => {
   }
 };
 
+// 并发控制函数
+const asyncPool = async (concurrency, tasks) => {
+  const results = [];
+  const executing = new Set();
+  
+  for (const task of tasks) {
+    const promise = task();
+    results.push(promise);
+    
+    executing.add(promise);
+    promise.then(() => executing.delete(promise));
+    
+    if (executing.size >= concurrency) {
+      await Promise.race(executing);
+    }
+  }
+  
+  return Promise.all(results);
+};
+
 // 上传所有分片
 const uploadChunks = async (file, partUploadUrls) => {
-  const chunkMd5List = [];
+  const maxConcurrency = uploadStatus.maxConcurrency; // 使用状态中的并发数
+  const uploadTasks = [];
   
-  // 顺序直传 OSS 分片
+  // 创建所有分片的上传任务
   for (let i = 0; i < uploadStatus.totalChunks; i++) {
+    const chunkIndex = i + 1;
     const start = i * uploadStatus.chunkSize;
     const end = Math.min(file.size, start + uploadStatus.chunkSize);
     const chunk = file.slice(start, end);
 
     // 取预签名直传URL（后端Map<Integer, String>，索引从1开始，键可能是数字或字符串）
-    const partIndex = i + 1;
-    const url = partUploadUrls?.[partIndex] || partUploadUrls?.[String(partIndex)];
+    const url = partUploadUrls?.[chunkIndex] || partUploadUrls?.[String(chunkIndex)];
     if (!url) {
-      throw new Error(`缺少分片 ${partIndex} 的预签名URL`);
+      throw new Error(`缺少分片 ${chunkIndex} 的预签名URL`);
     }
     
-    try {
-      // 直传到阿里云 OSS（PUT）
-      const response = await fetch(url, {
-        method: 'PUT',
-        body: chunk,
-      });
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        throw new Error(`OSS直传失败（分片${partIndex}）：${response.status} ${response.statusText} ${text}`);
-      }
-
-      // 计算分片MD5（用于后端完整性校验）
-      const chunkMd5 = await fileApi.calculateChunkMD5(chunk);
-      chunkMd5List.push(chunkMd5);
-
-      // 调试：打印所有响应头，帮助定位 CORS 暴露问题
+    // 创建单个分片的上传函数
+    const uploadChunk = async () => {
       try {
-        console.debug('OSS响应头（分片' + partIndex + '）:', Array.from(response.headers.entries()));
-      } catch (_) {}
+        // 直传到阿里云 OSS（PUT）
+        const response = await fetch(url, {
+          method: 'PUT',
+          body: chunk,
+        });
 
-      // 获取 OSS 返回的 ETag；如未暴露则回退为分片MD5
-      let eTag = response.headers.get('ETag') || response.headers.get('etag') || '';
-      if (eTag) {
-        eTag = eTag.replace(/^\"|\"$/g, '');
-      } else {
-        console.warn('未获取到 ETag，回退使用分片MD5（请确认Bucket CORS已在 ExposeHeader 暴露 ETag）');
-        eTag = chunkMd5;
+        if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          throw new Error(`OSS直传失败（分片${chunkIndex}）：${response.status} ${response.statusText} ${text}`);
+        }
+
+        // 获取 OSS 返回的 ETag；如未暴露则回退为分片MD5
+        let eTag = response.headers.get('ETag') || response.headers.get('etag') || '';
+        if (eTag) {
+          eTag = eTag.replace(/^\"|\"$/g, '');
+        } else {
+          console.warn('未获取到 ETag');
+        }
+        console.log('ETag(分片' + chunkIndex + '):', eTag);
+
+        // 将分片信息上报服务端（保存 ETag 等信息）
+        await fileApi.uploadChunk({
+          uploadId: uploadStatus.uploadId,
+          chunkIndex: chunkIndex,
+          ETag: eTag,
+          chunkSize: chunk.size
+        });
+        
+        // 标记分片已上传并更新进度
+        uploadStatus.uploadedChunks.add(i);
+        updateTotalProgress();
+        
+        return { success: true, chunkIndex, eTag };
+      } catch (error) {
+        console.error(`分片${chunkIndex}上传失败:`, error);
+        return { success: false, chunkIndex, error: error.message };
       }
-      console.log('ETag(分片' + partIndex + '):', eTag);
-
-      // 将分片信息上报服务端（保存 ETag 等信息）
-      await fileApi.uploadChunk({
-        uploadId: uploadStatus.uploadId,
-        chunkIndex: partIndex,
-        ETag: eTag,
-        chunkSize: chunk.size
-      });
-      
-      // 标记分片已上传并更新进度
-      uploadStatus.uploadedChunks.add(i);
-      updateTotalProgress();
-      
-    } catch (error) {
-      console.error(`分片${partIndex}上传失败:`, error);
-      throw new Error(`分片${partIndex}上传失败: ${error.message}`);
+    };
+    
+    uploadTasks.push(uploadChunk);
+  }
+  
+  // 使用并发控制上传分片
+  const results = await asyncPool(maxConcurrency, uploadTasks);
+  
+  // 检查上传结果
+  const failedChunks = [];
+  const successfulChunks = [];
+  
+  results.forEach((result) => {
+    if (result.success) {
+      successfulChunks.push(result);
+    } else {
+      failedChunks.push(result);
     }
+  });
+  
+  // 如果有失败的分片，抛出错误
+  if (failedChunks.length > 0) {
+    const errorMessages = failedChunks.map(chunk => `分片${chunk.chunkIndex}: ${chunk.error}`).join(', ');
+    throw new Error(`以下分片上传失败: ${errorMessages}`);
   }
   
   // 所有分片上传完成后，调用完成接口
@@ -314,5 +369,35 @@ button:disabled {
 .upload-info p {
   margin: 5px 0;
   color: #666;
+}
+
+.concurrency-setting {
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.concurrency-setting label {
+  font-weight: bold;
+  color: #333;
+}
+
+.concurrency-setting select {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+.concurrency-setting select:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.concurrency-hint {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
 }
 </style>
