@@ -2,6 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
 import Home from '@/views/Home.vue'
+import Chat from '@/views/Chat.vue'
+import Knowledge from '@/views/Knowledge.vue'
+import Organization from '@/views/Organization.vue'
+import Users from '@/views/Users.vue'
+import AppLayout from '@/layouts/AppLayout.vue'
 import { tokenUtils } from '@/api/api'
 
 const router = createRouter({
@@ -18,13 +23,16 @@ const router = createRouter({
       component: Register
     },
     {
-      path: '/home',
-      name: 'Home',
-      component: Home
-    },
-    {
       path: '/',
-      redirect: '/home'
+      component: AppLayout,
+      children: [
+        { path: '', redirect: '/chat' },
+        { path: 'home', name: 'Home', component: Home },
+        { path: 'chat', name: 'Chat', component: Chat },
+        { path: 'knowledge', name: 'Knowledge', component: Knowledge },
+        { path: 'organization', name: 'Organization', component: Organization },
+        { path: 'users', name: 'Users', component: Users },
+      ]
     }
   ],
 })

@@ -69,7 +69,7 @@ const uploadStatus = reactive({
   currentChunk: 0,
   totalChunks: 0,
   uploadId: '',
-  chunkSize: 2 * 1024 * 1024, // 10MB 分片大小
+  chunkSize: 10 * 1024 * 1024, // 2MB 分片大小
   maxConcurrency: 3, // 最大并发数
   uploadedChunks: new Set(),
   error: ''
