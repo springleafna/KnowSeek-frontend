@@ -1,107 +1,117 @@
 <template>
   <div class="login-container">
-    <h2>登录</h2>
-    <form @submit.prevent="handleLogin">
-      <div class="form-group">
-        <label for="username">用户名:</label>
-        <input type="text" id="username" v-model="username" required />
-      </div>
-      <div class="form-group">
-        <label for="password">密码:</label>
-        <input type="password" id="password" v-model="password" required />
-      </div>
-      <button type="submit">登录</button>
-    </form>
-    <p>还没有账号？ <router-link to="/register">注册</router-link></p>
+    <n-card class="login-card" :bordered="false">
+      <n-h2>登录</n-h2>
+      <n-form 
+        ref="formRef" 
+        :model="model" 
+        :rules="rules" 
+        size="large"
+      >
+        <n-form-item label="用户名" path="username">
+          <n-input 
+            v-model:value="model.username" 
+            placeholder="请输入用户名"
+            :disabled="loading"
+          />
+        </n-form-item>
+        <n-form-item label="密码" path="password">
+          <n-input 
+            v-model:value="model.password" 
+            type="password" 
+            placeholder="请输入密码"
+            :disabled="loading"
+            show-password-on="mousedown"
+          />
+        </n-form-item>
+        <n-form-item>
+          <n-button 
+            type="primary" 
+            block 
+            size="large"
+            :loading="loading"
+            @click="handleLogin"
+          >
+            登录
+          </n-button>
+        </n-form-item>
+      </n-form>
+      <n-text depth="3">
+        还没有账号？ 
+        <router-link to="/register">
+          <n-text type="primary">注册</n-text>
+        </router-link>
+      </n-text>
+    </n-card>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import userApi, { tokenUtils } from '@/api/api';
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMessage } from 'naive-ui'
+import userApi, { tokenUtils } from '@/api/api'
 
-const username = ref('');
-const password = ref('');
-const router = useRouter();
+const router = useRouter()
+const message = useMessage()
+const loading = ref(false)
+const formRef = ref(null)
+
+const model = reactive({
+  username: '',
+  password: ''
+})
+
+const rules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' }
+  ]
+}
 
 const handleLogin = async () => {
   try {
-    const result = await userApi.login({ username: username.value, password: password.value });
-    // 登录成功，处理返回的token
-    console.log('登录成功:', result);
-    tokenUtils.setToken(result.token);
-    alert('登录成功！');
-    router.push('/home'); // 登录成功后跳转到主页
+    await formRef.value?.validate()
+    loading.value = true
+    
+    const result = await userApi.login({ 
+      username: model.username, 
+      password: model.password 
+    })
+    
+    tokenUtils.setToken(result.token)
+    message.success('登录成功！')
+    router.push('/home')
   } catch (error) {
-    console.error('登录失败:', error.message);
-    alert('登录失败：' + error.message);
+    if (error?.message) {
+      console.error('登录失败:', error.message)
+      message.error('登录失败：' + error.message)
+    }
+  } finally {
+    loading.value = false
   }
-};
+}
 </script>
 
 <style scoped>
 .login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 64px);
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  width: 100%;
   max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-h2 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 15px;
-  text-align: left;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-  color: #555;
-}
-
-input[type="text"],
-input[type="password"] {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-button:hover {
-  background-color: #0056b3;
-}
-
-p {
-  margin-top: 20px;
-  color: #666;
-}
-
-router-link {
-  color: #007bff;
+a {
   text-decoration: none;
-}
-
-router-link:hover {
-  text-decoration: underline;
 }
 </style>

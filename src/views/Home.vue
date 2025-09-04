@@ -1,103 +1,162 @@
 <template>
   <div class="home-container">
-    <h2>主页</h2>
-
-    <section class="upload-section">
-      <h3>文件上传</h3>
-      <div class="upload-box">
-        <input type="file" @change="onFileChange" :disabled="uploadStatus.uploading" />
-        <p v-if="selectedFileName">已选择：{{ selectedFileName }}</p>
-        
-        <!-- 并发数设置 -->
-        <div class="concurrency-setting" v-if="selectedFile && !uploadStatus.uploading">
-          <label>并发数：</label>
-          <select v-model="uploadStatus.maxConcurrency" :disabled="uploadStatus.uploading">
-            <option value="1">1个分片</option>
-            <option value="2">2个分片</option>
-            <option value="3">3个分片</option>
-            <option value="5">5个分片</option>
-            <option value="8">8个分片</option>
-          </select>
-          <span class="concurrency-hint">（建议根据网络情况调整）</span>
-        </div>
-        
-        <button 
-          :disabled="!selectedFile || uploadStatus.uploading" 
-          @click="handleUpload"
-        >
-          {{ uploadStatus.uploading ? '上传中...' : '上传' }}
-        </button>
-        
-        <!-- 上传进度条 -->
-        <div v-if="uploadStatus.uploading" class="progress-container">
-          <div class="progress-bar" :style="{width: uploadStatus.progress + '%'}"></div>
-          <span class="progress-text">{{ uploadStatus.progress }}%</span>
-        </div>
-        
-        <!-- 错误信息 -->
-        <p v-if="uploadStatus.error" class="error-message">{{ uploadStatus.error }}</p>
-        
-        <!-- 上传信息 -->
-        <div v-if="uploadStatus.uploading && uploadStatus.uploadId" class="upload-info">
-          <p>上传ID: {{ uploadStatus.uploadId }}</p>
-          <p>分片进度: {{ uploadStatus.uploadedChunks.size }}/{{ uploadStatus.totalChunks }}</p>
-          <p>并发上传: 最多{{ uploadStatus.maxConcurrency }}个分片同时上传</p>
-          <p>分片大小: {{ (uploadStatus.chunkSize / 1024 / 1024).toFixed(1) }}MB</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="actions">
-      <button class="logout-btn" @click="handleLogout">退出登录</button>
-    </section>
+    <n-layout content-style="padding: 2rem;">
+      <n-h2 style="margin-bottom: 2rem;">主页</n-h2>
+      
+      <n-card title="文件上传" :bordered="false" size="large">
+        <n-space vertical size="large">
+          <!-- 文件选择 -->
+          <n-upload
+            ref="uploadRef"
+            :default-file-list="[]"
+            :max="1"
+            :disabled="uploadStatus.uploading"
+            @change="onFileChange"
+            accept="*"
+            :show-file-list="false"
+          >
+            <n-upload-dragger>
+              <div style="margin-bottom: 12px;">
+                <n-icon size="48" :depth="3">
+                  <svg viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                  </svg>
+                </n-icon>
+              </div>
+              <n-text style="font-size: 16px;">
+                点击或者拖拽文件到该区域来上传
+              </n-text>
+            </n-upload-dragger>
+          </n-upload>
+          
+          <!-- 已选择的文件 -->
+          <div v-if="selectedFileName">
+            <n-alert type="info" :bordered="false">
+              已选择文件：{{ selectedFileName }}
+            </n-alert>
+          </div>
+          
+          <!-- 并发数设置 -->
+          <div v-if="selectedFile && !uploadStatus.uploading">
+            <n-form-item label="并发上传分片数">
+              <n-select 
+                v-model:value="uploadStatus.maxConcurrency" 
+                :options="concurrencyOptions"
+                :disabled="uploadStatus.uploading"
+                style="width: 200px;"
+              />
+              <template #feedback>
+                <n-text depth="3" style="font-size: 12px;">
+                  建议根据网络情况调整
+                </n-text>
+              </template>
+            </n-form-item>
+          </div>
+          
+          <!-- 上传按钮 -->
+          <n-button 
+            type="primary" 
+            size="large"
+            :disabled="!selectedFile || uploadStatus.uploading" 
+            :loading="uploadStatus.uploading"
+            @click="handleUpload"
+            block
+          >
+            {{ uploadStatus.uploading ? '上传中...' : '开始上传' }}
+          </n-button>
+        </n-space>
+      </n-card>
+      
+      <!-- 上传进度卡片 -->
+      <n-card v-if="uploadStatus.uploading" title="上传进度" style="margin-top: 1rem;" :bordered="false">
+        <n-space vertical>
+          <n-progress 
+            type="line" 
+            :percentage="uploadStatus.progress"
+            :show-indicator="true"
+            processing
+          />
+          
+          <n-descriptions :column="2" size="small">
+            <n-descriptions-item label="上传ID">
+              {{ uploadStatus.uploadId || '--' }}
+            </n-descriptions-item>
+            <n-descriptions-item label="分片进度">
+              {{ uploadStatus.uploadedChunks.size }}/{{ uploadStatus.totalChunks }}
+            </n-descriptions-item>
+            <n-descriptions-item label="最大并发数">
+              {{ uploadStatus.maxConcurrency }}
+            </n-descriptions-item>
+            <n-descriptions-item label="分片大小">
+              {{ (uploadStatus.chunkSize / 1024 / 1024).toFixed(1) }}MB
+            </n-descriptions-item>
+          </n-descriptions>
+        </n-space>
+      </n-card>
+      
+      <!-- 错误信息 -->
+      <n-alert v-if="uploadStatus.error" type="error" style="margin-top: 1rem;">
+        {{ uploadStatus.error }}
+      </n-alert>
+    </n-layout>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import userApi, { tokenUtils, fileApi } from '@/api/api';
+import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMessage } from 'naive-ui'
+import userApi, { tokenUtils, fileApi } from '@/api/api'
 
-const router = useRouter();
-const selectedFile = ref(null);
-const selectedFileName = ref('');
+const router = useRouter()
+const message = useMessage()
+const selectedFile = ref(null)
+const selectedFileName = ref('')
+const uploadRef = ref(null)
 
-// 分片上传相关状态
+const concurrencyOptions = [
+  { label: '1个分片', value: 1 },
+  { label: '2个分片', value: 2 },
+  { label: '3个分片', value: 3 },
+  { label: '5个分片', value: 5 },
+  { label: '8个分片', value: 8 }
+]
+
 const uploadStatus = reactive({
   uploading: false,
   progress: 0,
   currentChunk: 0,
   totalChunks: 0,
   uploadId: '',
-  chunkSize: 10 * 1024 * 1024, // 2MB 分片大小
+  chunkSize: 10 * 1024 * 1024, // 10MB 分片大小
   maxConcurrency: 3, // 最大并发数
   uploadedChunks: new Set(),
   error: ''
-});
+})
 
-const onFileChange = (e) => {
-  const file = e.target.files?.[0];
-  selectedFile.value = file || null;
-  selectedFileName.value = file ? file.name : '';
-};
+const onFileChange = ({ fileList }) => {
+  const file = fileList[0]?.file
+  selectedFile.value = file || null
+  selectedFileName.value = file ? file.name : ''
+}
 
 const handleUpload = async () => {
-  if (!selectedFile.value || uploadStatus.uploading) return;
+  if (!selectedFile.value || uploadStatus.uploading) return
   
   try {
-    uploadStatus.uploading = true;
-    uploadStatus.progress = 0;
-    uploadStatus.error = '';
-    uploadStatus.uploadedChunks.clear();
+    uploadStatus.uploading = true
+    uploadStatus.progress = 0
+    uploadStatus.error = ''
+    uploadStatus.uploadedChunks.clear()
     
-    const file = selectedFile.value;
+    const file = selectedFile.value
     
     // 1. 计算文件MD5
-    const fileMd5 = await fileApi.calculateFileMD5(file);
+    const fileMd5 = await fileApi.calculateFileMD5(file)
     
     // 2. 计算分片数量
-    const chunkTotal = Math.ceil(file.size / uploadStatus.chunkSize);
-    uploadStatus.totalChunks = chunkTotal;
+    const chunkTotal = Math.ceil(file.size / uploadStatus.chunkSize)
+    uploadStatus.totalChunks = chunkTotal
     
     // 3. 初始化上传
     const initResult = await fileApi.initUpload({
@@ -105,37 +164,37 @@ const handleUpload = async () => {
       fileMd5: fileMd5,
       fileSize: file.size,
       chunkTotal: chunkTotal
-    });
+    })
     
     // 4. 检查是否已上传（秒传）
     if (initResult.uploaded) {
-      uploadStatus.progress = 100;
-      alert('文件已存在，秒传成功！');
-      uploadStatus.uploading = false;
-      return;
+      uploadStatus.progress = 100
+      message.success('文件已存在，秒传成功！')
+      uploadStatus.uploading = false
+      return
     }
     
     // 5. 保存上传ID
-    uploadStatus.uploadId = initResult.uploadId;
+    uploadStatus.uploadId = initResult.uploadId
     
     // 6. 开始分片上传
-    const completeResult = await uploadChunks(file, initResult.partUploadUrls);
+    const completeResult = await uploadChunks(file, initResult.partUploadUrls)
     
     // 7. 显示上传结果
     if (completeResult.location) {
-      console.log('文件上传成功，访问地址:', completeResult.location);
+      console.log('文件上传成功，访问地址:', completeResult.location)
     }
     
-    alert('文件上传成功！');
+    message.success('文件上传成功！')
   } catch (error) {
-    console.error('上传失败:', error);
-    uploadStatus.error = error.message || '上传失败';
-    alert(`上传失败: ${uploadStatus.error}`);
+    console.error('上传失败:', error)
+    uploadStatus.error = error.message || '上传失败'
+    message.error(`上传失败: ${uploadStatus.error}`)
   } finally {
-    uploadStatus.uploading = false;
-    uploadStatus.progress = 0;
+    uploadStatus.uploading = false
+    uploadStatus.progress = 0
   }
-};
+}
 
 // 并发控制函数
 const asyncPool = async (concurrency, tasks) => {
@@ -287,117 +346,7 @@ const handleLogout = async () => {
 
 <style scoped>
 .home-container {
-  max-width: 720px;
-  margin: 30px auto;
-  padding: 20px;
-}
-
-.upload-section {
-  margin-top: 20px;
-}
-
-.upload-box {
-  border: 1px dashed #bbb;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-button {
-  margin-top: 10px;
-  padding: 8px 16px;
-  border: none;
-  background: #007bff;
-  color: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: #9fbff1;
-  cursor: not-allowed;
-}
-
-.logout-btn {
-  background: #ff4d4f;
-}
-
-.actions {
-  margin-top: 30px;
-}
-
-/* 进度条样式 */
-.progress-container {
-  margin-top: 15px;
-  width: 100%;
-  height: 20px;
-  background-color: #f0f0f0;
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-bar {
-  height: 100%;
-  background-color: #4caf50;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  text-align: center;
-  line-height: 20px;
-  color: #333;
-  font-size: 12px;
-}
-
-.error-message {
-  color: #ff4d4f;
-  margin-top: 10px;
-}
-
-.upload-info {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.upload-info p {
-  margin: 5px 0;
-  color: #666;
-}
-
-.concurrency-setting {
-  margin: 15px 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.concurrency-setting label {
-  font-weight: bold;
-  color: #333;
-}
-
-.concurrency-setting select {
-  padding: 5px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-}
-
-.concurrency-setting select:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
-}
-
-.concurrency-hint {
-  font-size: 12px;
-  color: #666;
-  font-style: italic;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 </style>
