@@ -1,81 +1,241 @@
 <template>
-  <div class="chat-layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h3>会话</h3>
-        <button class="btn" @click="handleCreateConversation" :disabled="loading.conversations">新建</button>
-      </div>
-      <div class="conversation-list" v-if="!loading.conversations">
-        <div
-          v-for="item in conversations"
-          :key="item.conversationId"
-          :class="['conversation-item', { active: item.conversationId === activeConversationId }]"
-          @click="selectConversation(item.conversationId)"
-        >
-          <div class="title">{{ item.title || '未命名会话' }}</div>
-          <div class="meta">
-            <span class="last">{{ item.lastMessage || '暂无消息' }}</span>
-            <span class="time">{{ formatTime(item.lastMessageTime || item.createTime) }}</span>
-          </div>
-          <button class="delete" @click.stop="handleDeleteConversation(item.conversationId)">删除</button>
-        </div>
-        <div v-if="conversations.length === 0" class="empty">暂无会话，点击“新建”开始</div>
-      </div>
-      <div class="loading" v-else>加载会话中...</div>
-    </aside>
+  <n-config-provider :theme="null">
+    <n-layout class="chat-layout" has-sider>
+      <n-layout-sider
+        bordered
+        collapse-mode="width"
+        :collapsed-width="0"
+        :width="300"
+        show-trigger
+        content-style="padding: 16px; display: flex; flex-direction: column;"
+      >
+        <n-space vertical :size="16" style="flex: 1; min-height: 0;">
+          <n-space justify="space-between" align="center">
+            <n-h3 :depth="3" style="margin: 0;">会话</n-h3>
+            <n-button
+              type="primary"
+              size="small"
+              @click="handleCreateConversation"
+              :loading="loading.conversations"
+            >
+              新建
+            </n-button>
+          </n-space>
+          
+          <n-scrollbar style="flex: 1;">
+            <n-spin :show="loading.conversations">
+              <n-space vertical :size="8" v-if="!loading.conversations">
+                <n-card
+                  v-for="item in conversations"
+                  :key="item.conversationId"
+                  size="small"
+                  hoverable
+                  :class="{ 'active-conversation': item.conversationId === activeConversationId }"
+                  @click="selectConversation(item.conversationId)"
+                  style="cursor: pointer;"
+                >
+                  <template #header>
+                    <n-ellipsis>{{ item.title || '未命名会话' }}</n-ellipsis>
+                  </template>
+                  <template #header-extra>
+                    <n-button
+                      text
+                      type="error"
+                      size="tiny"
+                      @click.stop="handleDeleteConversation(item.conversationId)"
+                    >
+                      删除
+                    </n-button>
+                  </template>
+                  <n-space vertical :size="4">
+                    <n-ellipsis>{{ item.lastMessage || '暂无消息' }}</n-ellipsis>
+                    <n-text depth="3" :style="{ fontSize: '12px' }">
+                      {{ formatTime(item.lastMessageTime || item.createTime) }}
+                    </n-text>
+                  </n-space>
+                </n-card>
+                
+                <n-empty v-if="conversations.length === 0" description="暂无会话，点击「新建」开始" />
+              </n-space>
+            </n-spin>
+          </n-scrollbar>
+        </n-space>
+      </n-layout-sider>
 
-    <main class="chat-main">
-      <div class="chat-header">
-        <h3>{{ activeConversationTitle }}</h3>
-        <div class="ops">
-          <button class="btn ghost" @click="handleClearHistory" :disabled="!activeConversationId || loading.clearing">清空</button>
-        </div>
-      </div>
+      <n-layout content-style="display: flex; flex-direction: column; padding: 16px;">
+        <n-card style="flex: 1; display: flex; flex-direction: column;" :bordered="false">
+          <template #header>
+            <n-space justify="space-between" align="center">
+              <n-h3 :depth="3" style="margin: 0;">{{ activeConversationTitle }}</n-h3>
+              <n-button
+                ghost
+                @click="handleClearHistory"
+                :disabled="!activeConversationId"
+                :loading="loading.clearing"
+              >
+                清空
+              </n-button>
+            </n-space>
+          </template>
 
-      <div class="chat-body" ref="chatBodyRef">
-        <div v-if="messages.length === 0" class="placeholder">开始你的提问吧～</div>
-        <div v-for="(msg, idx) in messages" :key="idx" class="message" :class="msg.role">
-          <div class="bubble">
-            <pre class="content">{{ msg.message }}</pre>
-            <div class="sub">
-              <span>{{ msg.timestamp ? formatTime(msg.timestamp) : '' }}</span>
-              <span v-if="msg.fromKnowledgeBase" class="kb">知识库</span>
-            </div>
-          </div>
-        </div>
-        <div v-if="streamingText" class="message assistant">
-          <div class="bubble">
-            <pre class="content">{{ streamingText }}</pre>
-          </div>
-        </div>
-      </div>
+          <div class="chat-body" ref="chatBodyRef">
+            <n-empty v-if="messages.length === 0" description="开始你的提问吧～" />
+            
+            <n-space vertical :size="16" v-else>
+              <div
+                v-for="(msg, idx) in messages"
+                :key="idx"
+                :class="`message-wrapper ${msg.role}`"
+              >
+                <n-card
+                  size="small"
+                  :class="`message-card ${msg.role}`"
+                  :content-style="{ padding: '12px 16px' }"
+                >
+                  <div 
+                    v-if="msg.role === 'assistant'" 
+                    v-html="renderMarkdown(msg.message)" 
+                    class="markdown-content"
+                    @click="handleCodeCopy"
+                  ></div>
+                  <div v-else class="user-message">{{ msg.message }}</div>
+                  
+                  <template #footer>
+                    <n-space :size="8" align="center">
+                      <n-text depth="3" :style="{ fontSize: '12px' }">
+                        {{ msg.timestamp ? formatTime(msg.timestamp) : '' }}
+                      </n-text>
+                      <n-tag v-if="msg.fromKnowledgeBase" type="success" size="small">
+                        知识库
+                      </n-tag>
+                    </n-space>
+                  </template>
+                </n-card>
+              </div>
 
-      <div class="chat-input">
-        <textarea
-          v-model="inputText"
-          :disabled="loading.sending || loading.streaming"
-          placeholder="输入你的问题，Shift+Enter 换行，Enter 发送"
-          @keydown.enter.exact.prevent="handleSend(false)"
-          @keydown.enter.shift.exact.stop
-        />
-        <div class="toolbar">
-          <label class="kb-switch">
-            <input type="checkbox" v-model="useKnowledgeBase" /> 使用知识库
-          </label>
-          <div class="buttons">
-            <button class="btn primary" @click="handleSend(false)" :disabled="!canSend">发送</button>
-            <button class="btn" v-if="!loading.streaming" @click="handleSend(true)" :disabled="!canSend">流式发送</button>
-            <button class="btn danger" v-else @click="abortStream">停止</button>
+              <div v-if="streamingText" class="message-wrapper assistant">
+                <n-card
+                  size="small"
+                  class="message-card assistant streaming"
+                  :content-style="{ padding: '12px 16px' }"
+                >
+                  <div 
+                    v-html="renderMarkdown(streamingText)" 
+                    class="markdown-content"
+                    @click="handleCodeCopy"
+                  ></div>
+                  <n-spin :show="true" size="small" style="margin-top: 8px;" />
+                </n-card>
+              </div>
+            </n-space>
           </div>
-        </div>
-      </div>
-    </main>
-  </div>
+
+          <template #footer>
+            <n-space vertical :size="12">
+              <n-input
+                v-model:value="inputText"
+                type="textarea"
+                placeholder="输入你的问题，Shift+Enter 换行，Enter 发送"
+                :disabled="loading.sending || loading.streaming"
+                :autosize="{ minRows: 3, maxRows: 6 }"
+                @keydown.enter.exact.prevent="handleSend(false)"
+                @keydown.enter.shift.exact.stop
+              />
+              
+              <n-space justify="space-between" align="center">
+                <n-checkbox v-model:checked="useKnowledgeBase">
+                  使用知识库
+                </n-checkbox>
+                
+                <n-space :size="8">
+                  <n-button
+                    type="primary"
+                    @click="handleSend(false)"
+                    :disabled="!canSend"
+                    :loading="loading.sending"
+                  >
+                    发送
+                  </n-button>
+                  <n-button
+                    v-if="!loading.streaming"
+                    @click="handleSend(true)"
+                    :disabled="!canSend"
+                  >
+                    流式发送
+                  </n-button>
+                  <n-button
+                    v-else
+                    type="error"
+                    @click="abortStream"
+                  >
+                    停止
+                  </n-button>
+                </n-space>
+              </n-space>
+            </n-space>
+          </template>
+        </n-card>
+      </n-layout>
+    </n-layout>
+  </n-config-provider>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { 
+  NConfigProvider, NLayout, NLayoutSider, NCard, NButton, NInput, 
+  NSpace, NH3, NScrollbar, NSpin, NEllipsis, NText, NEmpty, 
+  NCheckbox, NTag
+} from 'naive-ui'
+import { marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
 import { chatApi } from '@/api/api'
+
+// 配置 marked 扩展
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code, lang) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+    try {
+      return hljs.highlight(code, { language }).value
+    } catch (error) {
+      console.warn('代码高亮失败:', error)
+      return code
+    }
+  }
+}))
+
+// 配置 marked 选项
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false,
+  tables: true,
+  pedantic: false
+})
+
+// Markdown 渲染函数
+function renderMarkdown(content) {
+  if (!content) return ''
+  try {
+    return marked.parse(content, {
+      async: false,
+      walkTokens: (token) => {
+        // 对代码块添加复制按钮等额外功能
+        if (token.type === 'code') {
+          // 可以在这里添加更多功能
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Markdown渲染失败:', error)
+    return content
+  }
+}
 
 const conversations = ref([])
 const activeConversationId = ref('')
@@ -290,6 +450,39 @@ function abortStream() {
   streamingText.value = ''
 }
 
+// 处理代码复制
+async function handleCodeCopy(event) {
+  const target = event.target
+  if (target.tagName === 'CODE' && target.parentElement.tagName === 'PRE') {
+    const code = target.textContent
+    try {
+      await navigator.clipboard.writeText(code)
+      // 这里可以显示复制成功的提示
+      console.log('代码已复制到剪贴板')
+    } catch (error) {
+      console.error('复制失败:', error)
+      // 降级到旧方法
+      fallbackCopy(code)
+    }
+  }
+}
+
+// 降级复制方法
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    console.log('代码已复制到剪贴板')
+  } catch (error) {
+    console.error('复制失败:', error)
+  } finally {
+    document.body.removeChild(textarea)
+  }
+}
+
 onMounted(async () => {
   await loadConversations()
   if (activeConversationId.value) {
@@ -300,231 +493,226 @@ onMounted(async () => {
 
 <style scoped>
 .chat-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  height: 100%;
-  gap: 16px;
-  padding: 16px 20px;
+  height: 100vh;
   box-sizing: border-box;
 }
 
-.sidebar {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(17,24,39,0.06);
+.active-conversation {
+  background: var(--n-item-color-hover) !important;
+}
+
+.message-wrapper {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  width: 100%;
+  margin-bottom: 16px;
 }
 
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.btn {
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #111827;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.btn.primary {
-  background: #1a73e8;
-  border-color: #1a73e8;
-  color: #fff;
-}
-
-.btn.ghost {
-  background: #fff;
-}
-
-.btn.danger {
-  background: #ef4444;
-  border-color: #ef4444;
-  color: #fff;
-}
-
-.btn[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.conversation-list {
-  overflow: auto;
-  padding: 8px 0;
-}
-
-.conversation-item {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #f7f7f7;
-  position: relative;
-}
-
-.conversation-item.active {
-  background: #f9fbff;
-}
-
-.conversation-item .title {
-  font-weight: 600;
-  color: #111827;
-}
-
-.conversation-item .meta {
-  margin-top: 4px;
-  display: flex;
-  justify-content: space-between;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.conversation-item .delete {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #fff;
-  color: #ef4444;
-  border: 1px solid #f3d2d2;
-  border-radius: 6px;
-  padding: 4px 8px;
-  cursor: pointer;
-}
-
-.empty {
-  padding: 16px;
-  color: #6b7280;
-}
-
-.loading {
-  padding: 16px;
-}
-
-.chat-main {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  height: 100%;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(17,24,39,0.06);
-}
-
-.chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.chat-body {
-  overflow: auto;
-  padding: 16px;
-  background: #fafafa;
-}
-
-.placeholder {
-  color: #6b7280;
-}
-
-.message {
-  display: flex;
-  margin-bottom: 12px;
-}
-
-.message.user {
+.message-wrapper.user {
   justify-content: flex-end;
 }
 
-.message .bubble {
-  max-width: 70%;
-  background: #fff;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+.message-wrapper.assistant {
+  justify-content: flex-start;
 }
 
-.message.user .bubble {
-  background: #e8f0fe;
-  border-color: #e3ebfd;
+.message-card {
+  max-width: 80%;
+  word-break: break-word;
 }
 
-.message .content {
-  margin: 0;
+.message-card.user {
+  background: var(--n-color-primary-popover);
+}
+
+.message-card.assistant {
+  background: var(--n-card-color);
+}
+
+.message-card.streaming {
+  border: 1px solid var(--n-color-primary);
+}
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  background: var(--n-body-color);
+  min-height: 0;
+  max-height: 100%;
+}
+
+.markdown-content {
+  line-height: 1.6;
+  font-size: 14px;
+  color: var(--n-text-color);
+}
+
+.markdown-content p {
+  margin: 8px 0;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  color: var(--n-text-color);
+}
+
+.markdown-content h1 { font-size: 1.5em; }
+.markdown-content h2 { font-size: 1.3em; }
+.markdown-content h3 { font-size: 1.2em; }
+.markdown-content h4 { font-size: 1.1em; }
+.markdown-content h5 { font-size: 1.0em; }
+.markdown-content h6 { font-size: 0.9em; }
+
+.markdown-content code {
+  background: var(--n-code-color);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+  color: var(--n-text-color);
+}
+
+.markdown-content pre {
+  background: var(--n-code-color);
+  padding: 12px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+  border: 1px solid var(--n-border-color);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.markdown-content pre:hover {
+  border-color: var(--n-color-primary);
+  background: var(--n-code-color);
+}
+
+.markdown-content pre::after {
+  content: '点击复制';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 12px;
+  color: var(--n-text-color-depth-3);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.markdown-content pre:hover::after {
+  opacity: 1;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--n-color-primary);
+  padding-left: 12px;
+  margin: 12px 0;
+  color: var(--n-text-color-depth-2);
+  font-style: italic;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.markdown-content li {
+  margin: 4px 0;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--n-border-color);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: var(--n-table-header-color);
+  font-weight: 600;
+}
+
+.markdown-content a {
+  color: var(--n-color-primary);
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.user-message {
+  line-height: 1.6;
+  font-size: 14px;
+  color: var(--n-text-color);
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-.message .sub {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #6b7280;
-  display: flex;
-  gap: 8px;
+/* 代码高亮主题适配 */
+.markdown-content .hljs {
+  background: var(--n-code-color) !important;
+  color: var(--n-text-color) !important;
+  border-radius: 8px;
 }
 
-.message .kb {
-  color: #22c55e;
+/* 流式响应动画 */
+.message-card.streaming {
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
-.chat-input {
-  border-top: 1px solid #f0f0f0;
-  padding: 12px 16px;
-  background: #fff;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
-.chat-input textarea {
-  width: 100%;
-  min-height: 110px;
-  resize: vertical;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 14px;
-  box-sizing: border-box;
-  outline: none;
-  background: #fff;
+/* 滚动条样式 */
+.chat-body::-webkit-scrollbar {
+  width: 6px;
 }
 
-.chat-input textarea:focus {
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+.chat-body::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.toolbar {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.chat-body::-webkit-scrollbar-thumb {
+  background: var(--n-scrollbar-color);
+  border-radius: 3px;
 }
 
-.kb-switch {
-  user-select: none;
-  color: #374151;
-}
-
-.buttons button {
-  margin-left: 8px;
-}
-
-.buttons button[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
+.chat-body::-webkit-scrollbar-thumb:hover {
+  background: var(--n-scrollbar-color-hover);
 }
 </style> 

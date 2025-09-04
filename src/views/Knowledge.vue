@@ -3,7 +3,7 @@
     <div class="header">
       <h2>知识库</h2>
       <div class="tools">
-        <button class="btn" @click="uploadFiles">+ 新增</button>
+        <button class="btn" @click="showUploadModal = true">+ 新增</button>
         <input v-model="keyword" type="text" placeholder="搜索文件名..." @keyup.enter="loadFiles" />
         <button class="btn" @click="loadFiles">刷新</button>
       </div>
@@ -43,15 +43,23 @@
 
       <div v-else class="empty">暂无文件</div>
     </div>
+
+    <!-- 文件上传弹窗 -->
+    <FileUploadModal 
+      v-model:show="showUploadModal"
+      @uploaded="handleFileUploaded"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import FileUploadModal from '@/components/FileUploadModal.vue'
 
 const keyword = ref('')
 const files = ref([])
 const selectedIds = ref([])
+const showUploadModal = ref(false)
 const checkedAll = computed({
   get() {
     return files.value.length > 0 && selectedIds.value.length === files.value.length
@@ -113,6 +121,11 @@ function handleDelete(file) {
   // 预留删除逻辑
   files.value = files.value.filter(f => f.id !== file.id)
   selectedIds.value = selectedIds.value.filter(id => id !== file.id)
+}
+
+function handleFileUploaded() {
+  // 文件上传完成后重新加载文件列表
+  loadFiles()
 }
 
 onMounted(loadFiles)
