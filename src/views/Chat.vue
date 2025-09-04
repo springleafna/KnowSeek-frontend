@@ -128,6 +128,7 @@
                 </n-card>
               </div>
             </n-space>
+            <div ref="chatBodyBottomRef" style="height: 1px;"></div>
           </div>
 
           <template #footer>
@@ -243,6 +244,7 @@ const messages = ref([])
 const inputText = ref('')
 const useKnowledgeBase = ref(true)
 const chatBodyRef = ref(null)
+const chatBodyBottomRef = ref(null)
 
 const streamingText = ref('')
 let streamCtrl = null
@@ -277,6 +279,11 @@ function formatTime(t) {
 
 function scrollToBottom() {
   nextTick(() => {
+    const bottom = chatBodyBottomRef.value
+    if (bottom && typeof bottom.scrollIntoView === 'function') {
+      bottom.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      return
+    }
     const el = chatBodyRef.value
     if (!el) return
     el.scrollTop = el.scrollHeight
@@ -493,7 +500,7 @@ onMounted(async () => {
 
 <style scoped>
 .chat-layout {
-  height: 100vh;
+  height: calc(100vh - 64px);
   box-sizing: border-box;
 }
 

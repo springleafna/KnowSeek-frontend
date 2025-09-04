@@ -83,7 +83,7 @@ const handleLogin = async () => {
     
     tokenUtils.setToken(result.token)
     message.success('登录成功！')
-    router.push('/home')
+    router.push('/')
   } catch (error) {
     if (error?.message) {
       console.error('登录失败:', error.message)

@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
-import Home from '@/views/Home.vue'
 import Chat from '@/views/Chat.vue'
 import Knowledge from '@/views/Knowledge.vue'
 import Organization from '@/views/Organization.vue'
@@ -27,7 +26,6 @@ const router = createRouter({
       component: AppLayout,
       children: [
         { path: '', redirect: '/chat' },
-        { path: 'home', name: 'Home', component: Home },
         { path: 'chat', name: 'Chat', component: Chat },
         { path: 'knowledge', name: 'Knowledge', component: Knowledge },
         { path: 'organization', name: 'Organization', component: Organization },
