@@ -7,10 +7,9 @@ import { userApi } from './userApi';
 import { fileApi } from './fileApi';
 import { organizationApi } from './organizationApi';
 import { chatApi } from './chatApi';
-import tokenUtils from './token';
 
 // 导出API对象
-export { userApi, fileApi, organizationApi, chatApi, tokenUtils };
+export { userApi, fileApi, organizationApi, chatApi };
 
 // 默认导出
 export default {
@@ -18,5 +17,4 @@ export default {
   ...fileApi,
   ...organizationApi,
   ...chatApi,
-  tokenUtils,
 };

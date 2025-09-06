@@ -1,5 +1,5 @@
 import axios from 'axios';
-import tokenUtils from './token';
+import { useAuthStore } from '@/stores/authStore';
 
 // 公共(无需鉴权)接口路径
 const PUBLIC_PATHS = ['/user/login', '/user/register', '/auth/refresh', '/auth/validate'];
@@ -25,19 +25,12 @@ const httpClient = axios.create({
 httpClient.interceptors.request.use(
   (config) => {
     if (!isPublicRequest(config.url)) {
-      const token = localStorage.getItem('token');
+      const authStore = useAuthStore();
+      const token = authStore.getToken();
       if (token) {
         // 根据Sa-Token配置，token-name为Authorization，直接传递token值（不添加Bearer前缀）
         config.headers['Authorization'] = token;
         
-        // 调试信息
-        console.log('发送请求携带token:', {
-          url: config.url,
-          token: token,
-          headers: {
-            authorization: config.headers['Authorization']
-          }
-        });
       } else {
         console.warn('请求需要token但本地没有token:', config.url);
       }
@@ -83,7 +76,8 @@ httpClient.interceptors.response.use(
             message = error.response.data?.message || '用户名或密码错误';
           } else {
             message = error.response.data?.message || '请先登录';
-            tokenUtils.removeToken();
+            const authStore = useAuthStore();
+            authStore.logout();
             if (window.location.pathname !== '/login') {
               window.location.href = '/login';
             }

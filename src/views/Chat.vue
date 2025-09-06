@@ -139,8 +139,7 @@
                 placeholder="输入你的问题，Shift+Enter 换行，Enter 发送"
                 :disabled="loading.sending || loading.streaming"
                 :autosize="{ minRows: 3, maxRows: 6 }"
-                @keydown.enter.exact.prevent="handleSend(false)"
-                @keydown.enter.shift.exact.stop
+                @keydown="handleKeydown"
               />
               
               <n-space justify="space-between" align="center">
@@ -193,6 +192,27 @@ import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import { chatApi } from '@/api/api'
+
+const handleKeydown = (e) => {
+  // 检查是否是 Enter 键
+  if (e.key === 'Enter') {
+    // 检查是否同时按下了 Shift 键 (对应 @keydown.enter.shift.exact.stop)
+    if (e.shiftKey) {
+      // 这是 Shift + Enter
+      // 1. 阻止事件冒泡 (实现 .stop)
+      e.stopPropagation();
+      // 2. 不做任何其他事情，允许 <textarea> 执行其默认行为（即换行）
+      return;
+    }
+    
+    // 如果代码运行到这里，说明是单独按下的 Enter 键 (对应 @keydown.enter.exact.prevent)
+    // 1. 阻止默认行为 (实现 .prevent)，即阻止 <textarea> 换行
+    e.preventDefault();
+    
+    // 2. 执行你的发送逻辑
+    handleSend(false);
+  }
+}
 
 // 配置 marked 扩展
 marked.use(markedHighlight({

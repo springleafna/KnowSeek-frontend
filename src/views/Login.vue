@@ -50,10 +50,12 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import userApi, { tokenUtils } from '@/api/api'
+import userApi from '@/api/api'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const message = useMessage()
+const authStore = useAuthStore()
 const loading = ref(false)
 const formRef = ref(null)
 
@@ -81,7 +83,18 @@ const handleLogin = async () => {
       password: model.password 
     })
     
-    tokenUtils.setToken(result.token)
+    // 先保存token
+    authStore.setToken(result.token)
+    
+    // 然后获取用户信息
+    try {
+      const userInfo = await userApi.getUserInfo()
+      authStore.setUserInfo(userInfo)
+    } catch (userInfoError) {
+      console.warn('获取用户信息失败:', userInfoError.message)
+      // 即使获取用户信息失败，也不影响登录流程
+    }
+    
     message.success('登录成功！')
     router.push('/')
   } catch (error) {

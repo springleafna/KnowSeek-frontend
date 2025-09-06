@@ -1,4 +1,5 @@
 import http from './http';
+import { useAuthStore } from '@/stores/authStore';
 
 // AI 对话相关 API 服务模块
 export const chatApi = {
@@ -19,7 +20,8 @@ export const chatApi = {
     const controller = new AbortController();
     const signal = controller.signal;
 
-    const token = localStorage.getItem('token');
+    const authStore = useAuthStore();
+    const token = authStore.getToken();
 
     const headers = {
       'Content-Type': 'application/json',

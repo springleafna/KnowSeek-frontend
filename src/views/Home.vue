@@ -106,7 +106,8 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import userApi, { tokenUtils, fileApi } from '@/api/api'
+import userApi, { fileApi } from '@/api/api'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const message = useMessage()
@@ -336,7 +337,8 @@ const handleLogout = async () => {
     // 即使退出登录失败，也要清理本地token并跳转
   } finally {
     // 确保清理本地token
-    tokenUtils.removeToken();
+    const authStore = useAuthStore();
+    authStore.logout();
     console.log('已清理本地token');
     // 跳转到登录页
     router.push('/login');

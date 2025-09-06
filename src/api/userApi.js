@@ -3,7 +3,7 @@
  */
 
 import http from './http';
-import tokenUtils from './token';
+import { useAuthStore } from '@/stores/authStore';
 
 export const userApi = {
   login(params) {
@@ -20,7 +20,8 @@ export const userApi = {
   },
   logout() {
     return http.post('/user/logout').finally(() => {
-      tokenUtils.removeToken();
+      const authStore = useAuthStore();
+      authStore.logout();
     });
   },
   getUserInfo() {

@@ -1,16 +1,18 @@
 <script setup>
-import userApi, { tokenUtils } from '@/api/api'
+import userApi from '@/api/api'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const message = useMessage()
+const authStore = useAuthStore()
 
 const user = ref(null)
 
 const fetchUserInfo = async () => {
-  if (!tokenUtils.isLoggedIn()) {
+  if (!authStore.isAuthenticated) {
     user.value = null
     return
   }
@@ -27,10 +29,22 @@ onMounted(() => {
   fetchUserInfo()
 })
 
+// 监听认证状态变化，登录后自动获取用户信息
+watch(
+  () => authStore.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated) {
+      fetchUserInfo()
+    } else {
+      user.value = null
+    }
+  }
+)
+
 const handleLogout = async () => {
   try {
     await userApi.logout()
-    tokenUtils.removeToken()
+    authStore.logout()
     user.value = null
     message.success('退出登录成功')
     router.push('/login')
@@ -56,15 +70,15 @@ const handleSelect = (key) => {
     <div class="nav-container">
       <n-text tag="h1" class="logo">KnowSeek</n-text>
       <n-space>
-        <router-link to="/login" v-if="!tokenUtils.isLoggedIn()">
+        <router-link to="/login" v-if="!authStore.isAuthenticated">
           <n-button text>登录</n-button>
         </router-link>
-        <router-link to="/register" v-if="!tokenUtils.isLoggedIn()">
+        <router-link to="/register" v-if="!authStore.isAuthenticated">
           <n-button text>注册</n-button>
         </router-link>
         <!-- 登录后显示头像 + 用户名 + 下拉菜单 -->
         <n-dropdown
-          v-if="tokenUtils.isLoggedIn()"
+          v-if="authStore.isAuthenticated"
           :options="dropdownOptions"
           trigger="hover"
           @select="handleSelect"

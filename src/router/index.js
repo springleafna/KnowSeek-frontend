@@ -6,7 +6,7 @@ import Knowledge from '@/views/Knowledge.vue'
 import Organization from '@/views/Organization.vue'
 import Users from '@/views/Users.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
-import { tokenUtils } from '@/api/api'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,7 +39,8 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login', '/register']
   const isPublic = publicPages.includes(to.path)
-  const loggedIn = tokenUtils.isLoggedIn()
+  const authStore = useAuthStore()
+  const loggedIn = authStore.isAuthenticated
 
   if (!isPublic && !loggedIn) {
     return next('/login')
