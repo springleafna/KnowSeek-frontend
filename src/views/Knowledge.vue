@@ -1,243 +1,381 @@
 <template>
-  <div class="knowledge-page">
-    <div class="header">
-      <h2>知识库</h2>
-      <div class="tools">
-        <button class="btn" @click="showUploadModal = true">+ 新增</button>
-        <input v-model="keyword" type="text" placeholder="搜索文件名..." @keyup.enter="loadFiles" />
-        <button class="btn" @click="loadFiles">刷新</button>
+  <div class="kb-container">
+    <!-- Header -->
+    <div class="kb-header">
+      <h1 class="kb-title">知识库</h1>
+      <p class="kb-subtitle">探索我们的知识资源，提升您的技能和知识水平</p>
+    </div>
+
+    <!-- Search & Controls -->
+    <n-space class="kb-controls" wrap align="center">
+      <n-input
+        v-model:value="searchTerm"
+        placeholder="搜索知识库..."
+        clearable
+        style="max-width: 420px; width: 100%"
+      >
+        <template #prefix>
+          <n-icon>
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
+          </n-icon>
+        </template>
+      </n-input>
+
+      <n-select
+        v-model:value="selectedCategory"
+        :options="categoryOptions"
+        style="width: 160px"
+        placeholder="选择分类"
+        clearable
+      />
+
+      <n-button-group>
+        <n-button :type="viewMode === 'grid' ? 'primary' : 'default'" quaternary @click="setViewMode('grid')">
+          <n-icon size="16" style="margin-right: 6px">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 3H3v7h7V3m11 0h-7v7h7V3M10 14H3v7h7v-7m11 0h-7v7h7v-7Z"/></svg>
+          </n-icon>
+          网格
+        </n-button>
+        <n-button :type="viewMode === 'list' ? 'primary' : 'default'" quaternary @click="setViewMode('list')">
+          <n-icon size="16" style="margin-right: 6px">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 5h18v2H3V5m0 6h18v2H3v-2m0 6h18v2H3v-2Z"/></svg>
+          </n-icon>
+          列表
+        </n-button>
+      </n-button-group>
+
+      <n-button type="primary" @click="openCreate">新增</n-button>
+    </n-space>
+
+    <!-- Result count -->
+    <div class="kb-count">
+      找到 {{ filteredItems.length }} 个结果
+      <template v-if="selectedCategory && selectedCategory !== '全部'">
+        ，在 "{{ selectedCategory }}" 分类中
+      </template>
+    </div>
+
+    <!-- Content -->
+    <div v-if="filteredItems.length > 0">
+      <n-grid v-if="viewMode === 'grid'" cols="1 s:2 l:3" x-gap="24" y-gap="24" responsive="screen">
+        <n-grid-item v-for="item in filteredItems" :key="item.id">
+          <n-card :segmented="{ content: true, footer: true }" class="kb-card kb-card--hover">
+            <template #header>
+              <div class="kb-card-header">
+                <div class="kb-type">
+                  <n-tag size="small" type="info" round>
+                    {{ item.typeLabel }}
+                  </n-tag>
+                </div>
+                <n-tag size="small" type="default" round> {{ item.category || '默认' }} </n-tag>
+              </div>
+              <div class="kb-card-title">{{ item.title }}</div>
+              <div class="kb-card-desc">{{ item.description || '暂无描述' }}</div>
+            </template>
+
+            <div class="kb-tags" v-if="item.tags && item.tags.length">
+              <n-space :size="6" wrap>
+                <n-tag v-for="t in item.tags" :key="t" size="small" type="default" round bordered>
+                  {{ t }}
+                </n-tag>
+              </n-space>
+            </div>
+
+            <div class="kb-card-meta">
+              <div class="kb-meta-row">
+                <span>创建时间: {{ item.lastUpdated }}</span>
+                <span v-if="item.readTime">{{ item.readTime }}</span>
+              </div>
+            </div>
+
+            <template #footer>
+              <n-space>
+                <n-button size="small" type="primary" secondary @click="onView(item)">查看</n-button>
+                <n-button size="small" tertiary @click="onDownload(item)">下载</n-button>
+                <n-button size="small" @click="onEdit(item)">编辑</n-button>
+              </n-space>
+            </template>
+          </n-card>
+        </n-grid-item>
+      </n-grid>
+
+      <div v-else class="kb-list">
+        <n-card v-for="item in filteredItems" :key="item.id" :segmented="{ content: true, footer: true }" class="kb-card-list kb-card kb-card--hover">
+          <template #header>
+            <div class="kb-list-header">
+              <div>
+                <div class="kb-card-title">{{ item.title }}</div>
+                <div class="kb-card-desc">{{ item.description || '暂无描述' }}</div>
+              </div>
+              <n-tag size="small" type="default" round>{{ item.category || '默认' }}</n-tag>
+            </div>
+          </template>
+          <div class="kb-tags" v-if="item.tags && item.tags.length">
+            <n-space :size="6" wrap>
+              <n-tag v-for="t in item.tags" :key="t" size="small" bordered round>
+                {{ t }}
+              </n-tag>
+            </n-space>
+          </div>
+          <div class="kb-card-meta">
+            <div class="kb-meta-row">
+              <span>创建时间: {{ item.lastUpdated }}</span>
+            </div>
+          </div>
+          <template #footer>
+            <n-space>
+              <n-button size="small" type="primary" secondary @click="onView(item)">查看</n-button>
+              <n-button size="small" tertiary @click="onDownload(item)">下载</n-button>
+              <n-button size="small" @click="onEdit(item)">编辑</n-button>
+            </n-space>
+          </template>
+        </n-card>
       </div>
     </div>
 
-    <div class="card">
-      <div class="table-wrap" v-if="files.length > 0">
-        <table class="table">
-          <thead>
-            <tr>
-              <th style="width: 36px;"><input type="checkbox" v-model="checkedAll" @change="toggleAll" /></th>
-              <th>文件名</th>
-              <th style="width: 120px;">大小</th>
-              <th style="width: 120px;">类型</th>
-              <th style="width: 180px;">上传时间</th>
-              <th style="width: 160px;">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="file in files" :key="file.id">
-              <td><input type="checkbox" v-model="selectedIds" :value="file.id" /></td>
-              <td class="name-cell">
-                <div class="name">{{ file.name }}</div>
-                <div class="sub">MD5: {{ file.md5 || '-' }}</div>
-              </td>
-              <td>{{ formatSize(file.size) }}</td>
-              <td>{{ file.type || '-' }}</td>
-              <td>{{ formatTime(file.uploadTime) }}</td>
-              <td>
-                <button class="link" @click="handleDownload(file)">下载</button>
-                <button class="link danger" @click="handleDelete(file)">删除</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-else class="empty">暂无文件</div>
+    <!-- Empty state -->
+    <div v-else class="kb-empty">
+      <n-empty description="未找到相关内容">
+        <template #extra>
+          <n-text depth="3">尝试调整搜索关键词或选择不同分类</n-text>
+        </template>
+      </n-empty>
     </div>
 
-    <!-- 文件上传弹窗 -->
-    <FileUploadModal 
-      v-model:show="showUploadModal"
-      @uploaded="handleFileUploaded"
-    />
+    <!-- Create / Edit Modal -->
+    <n-modal v-model:show="showEditModal" :title="isEdit ? '编辑知识库' : '新增知识库'" preset="dialog">
+      <n-form ref="formRef" :model="formModel" :rules="formRules" label-placement="left" label-width="80">
+        <n-form-item label="名称" path="name">
+          <n-input v-model:value="formModel.name" placeholder="请输入名称" maxlength="50" show-count />
+        </n-form-item>
+        <n-form-item label="描述" path="description">
+          <n-input v-model:value="formModel.description" type="textarea" placeholder="请输入描述" :autosize="{ minRows: 3, maxRows: 5 }" />
+        </n-form-item>
+      </n-form>
+      <template #action>
+        <n-space>
+          <n-button @click="closeModal">取消</n-button>
+          <n-button type="primary" :loading="saving" @click="submitForm">保存</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import FileUploadModal from '@/components/FileUploadModal.vue'
+import { ref, computed, onMounted } from 'vue';
+import { useMessage, NInput, NButton, NGrid, NGridItem, NCard, NTag, NEmpty, NText, NSpace, NIcon, NSelect, NButtonGroup } from 'naive-ui';
+import { knowledgeBaseApi } from '@/api/knowledgeBaseApi';
+// 额外引入的组件（仅用于类型提示与自动引入）
+import { NForm, NFormItem, NModal } from 'naive-ui';
 
-const keyword = ref('')
-const files = ref([])
-const selectedIds = ref([])
-const showUploadModal = ref(false)
-const checkedAll = computed({
-  get() {
-    return files.value.length > 0 && selectedIds.value.length === files.value.length
-  },
-  set(val) {
-    if (val) selectedIds.value = files.value.map(f => f.id)
-    else selectedIds.value = []
-  }
-})
+const message = useMessage();
 
-function toggleAll() {
-  checkedAll.value = !checkedAll.value
-}
+const searchTerm = ref('');
+const viewMode = ref('grid'); // 'grid' | 'list'
+const selectedCategory = ref('全部');
 
-function formatSize(size) {
-  if (!size && size !== 0) return '-'
-  const units = ['B','KB','MB','GB','TB']
-  let idx = 0
-  let s = size
-  while (s >= 1024 && idx < units.length - 1) {
-    s /= 1024
-    idx++
-  }
-  return `${s.toFixed(idx === 0 ? 0 : 1)} ${units[idx]}`
-}
+const rawItems = ref([]);
 
-function formatTime(t) {
-  if (!t) return '-'
+function formatDateTime(ts) {
+  if (!ts) return '';
   try {
-    const d = typeof t === 'string' ? new Date(t) : t
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    const hh = String(d.getHours()).padStart(2, '0')
-    const mm = String(d.getMinutes()).padStart(2, '0')
-    const ss = String(d.getSeconds()).padStart(2, '0')
-    return `${y}-${m}-${day} ${hh}:${mm}:${ss}`
-  } catch {
-    return '-'
+    const d = new Date(ts);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } catch (e) {
+    return String(ts);
   }
 }
 
-async function loadFiles() {
-  // 这里预留与后端对接，当前使用占位数据
-  const mock = [
-    { id: '1', name: '产品白皮书.pdf', size: 1048576, type: 'pdf', uploadTime: new Date(), md5: 'abcd1234' },
-    { id: '2', name: '知识库导入模板.xlsx', size: 348160, type: 'xlsx', uploadTime: new Date(Date.now() - 86400000) },
-  ]
-  files.value = mock.filter(f => !keyword.value || f.name.includes(keyword.value))
-  selectedIds.value = []
+function normalize(vo) {
+  return {
+    id: vo.id,
+    title: vo.name,
+    description: vo.description,
+    category: vo.category || '默认',
+    typeLabel: '文档',
+    lastUpdated: formatDateTime(vo.createdAt),
+    tags: vo.tags || [],
+  };
 }
 
-function handleDownload(file) {
-  // 预留下载逻辑
-  console.log('download', file)
+const categoryOptions = computed(() => {
+  const set = new Set(['全部']);
+  rawItems.value.forEach((it) => set.add(it.category || '默认'));
+  return Array.from(set).map((v) => ({ label: v, value: v }));
+});
+
+const filteredItems = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase();
+  const cat = selectedCategory.value;
+  return rawItems.value.filter((it) => {
+    const matchesSearch = !term
+      || (it.title || '').toLowerCase().includes(term)
+      || (it.description || '').toLowerCase().includes(term)
+      || (it.category || '').toLowerCase().includes(term);
+    const matchesCategory = !cat || cat === '全部' || it.category === cat;
+    return matchesSearch && matchesCategory;
+  });
+});
+
+function setViewMode(mode) {
+  viewMode.value = mode;
 }
 
-function handleDelete(file) {
-  // 预留删除逻辑
-  files.value = files.value.filter(f => f.id !== file.id)
-  selectedIds.value = selectedIds.value.filter(id => id !== file.id)
+function onView(item) {
+  message.info(`查看：${item.title}`);
 }
 
-function handleFileUploaded() {
-  // 文件上传完成后重新加载文件列表
-  loadFiles()
+function onDownload(item) {
+  message.warning('下载功能待接入');
 }
 
-onMounted(loadFiles)
+// 新增 / 编辑 相关
+const showEditModal = ref(false);
+const isEdit = ref(false);
+const saving = ref(false);
+const editingId = ref(null);
+const formRef = ref(null);
+const formModel = ref({
+  name: '',
+  description: ''
+});
+const formRules = {
+  name: { required: true, message: '请输入名称', trigger: 'blur' }
+};
+
+function openCreate() {
+  isEdit.value = false;
+  editingId.value = null;
+  formModel.value = { name: '', description: '' };
+  showEditModal.value = true;
+}
+
+function onEdit(item) {
+  isEdit.value = true;
+  editingId.value = item.id;
+  formModel.value = { name: item.title || '', description: item.description || '' };
+  showEditModal.value = true;
+}
+
+function closeModal() {
+  showEditModal.value = false;
+}
+
+async function submitForm() {
+  if (!formRef.value) return;
+  try {
+    saving.value = true;
+    await formRef.value.validate();
+    if (isEdit.value && editingId.value) {
+      await knowledgeBaseApi.updateKnowledgeBase({
+        id: editingId.value,
+        name: formModel.value.name,
+        description: formModel.value.description
+      });
+      message.success('更新成功');
+    } else {
+      await knowledgeBaseApi.createKnowledgeBase({
+        name: formModel.value.name,
+        description: formModel.value.description
+      });
+      message.success('创建成功');
+    }
+    showEditModal.value = false;
+    await fetchList();
+  } catch (err) {
+    if (err && err.message) {
+      message.error(err.message);
+    }
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function fetchList() {
+  try {
+    const list = await knowledgeBaseApi.listMyKnowledgeBases();
+    rawItems.value = Array.isArray(list) ? list.map(normalize) : [];
+  } catch (err) {
+    message.error(err.message || '获取知识库列表失败');
+  }
+}
+
+onMounted(fetchList);
 </script>
 
 <style scoped>
-.knowledge-page {
-  height: 100%;
-  padding: 16px 20px;
-  box-sizing: border-box;
+.kb-container {
+  padding: 24px;
 }
-
-.header {
+.kb-header {
+  margin-bottom: 16px;
+}
+.kb-title {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+.kb-subtitle {
+  margin: 0;
+  color: #666;
+}
+.kb-controls {
+  margin: 16px 0 12px;
+}
+.kb-count {
+  color: #888;
+  margin-bottom: 16px;
+}
+/* Cards */
+.kb-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+.kb-card--hover {
+  transition: box-shadow .2s ease;
+}
+.kb-card--hover:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+.kb-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.kb-card-desc {
+  color: #6b7280;
+  margin-top: 6px;
+}
+.kb-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
 }
-
-.header h2 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.tools {
+.kb-type {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
 }
-
-.tools input {
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  outline: none;
+.kb-tags {
+  margin: 8px 0 4px;
 }
-
-.tools input:focus {
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+.kb-card-meta {
+  color: #888;
+  font-size: 12px;
 }
-
-.btn {
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(17,24,39,0.06);
-  height: calc(100% - 52px);
-  overflow: hidden;
+.kb-meta-row {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
 }
-
-.table-wrap {
-  overflow: auto;
+.kb-list .kb-card-list + .kb-card-list {
+  margin-top: 16px;
 }
-
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.table thead th {
-  text-align: left;
-  background: #f9fafb;
-  color: #6b7280;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 10px 12px;
-  border-bottom: 1px solid #eef0f3;
-}
-
-.table tbody td {
-  padding: 12px;
-  border-bottom: 1px solid #f5f5f5;
-  color: #111827;
-}
-
-.name-cell .name {
-  font-weight: 600;
-}
-
-.name-cell .sub {
-  color: #9ca3af;
-  font-size: 12px;
-}
-
-.link {
-  background: none;
-  border: none;
-  color: #1a73e8;
-  cursor: pointer;
-  padding: 0 8px 0 0;
-}
-
-.link.danger {
-  color: #ef4444;
-}
-
-.empty {
-  padding: 40px;
-  color: #6b7280;
+.kb-empty {
+  padding: 60px 0;
 }
 </style> 

@@ -5,6 +5,7 @@ import Chat from '@/views/Chat.vue'
 import Knowledge from '@/views/Knowledge.vue'
 import Organization from '@/views/Organization.vue'
 import Users from '@/views/Users.vue'
+import File from '@/views/File.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -30,6 +31,7 @@ const router = createRouter({
         { path: 'knowledge', name: 'Knowledge', component: Knowledge },
         { path: 'organization', name: 'Organization', component: Organization },
         { path: 'users', name: 'Users', component: Users },
+        { path: 'file', name: 'File', component: File },
       ]
     }
   ],
