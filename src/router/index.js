@@ -29,6 +29,7 @@ const router = createRouter({
         { path: '', redirect: '/chat' },
         { path: 'chat', name: 'Chat', component: Chat },
         { path: 'knowledge', name: 'Knowledge', component: Knowledge },
+        { path: 'knowledge/:id', name: 'KnowledgeDetail', component: () => import('@/views/KnowledgeDetail.vue') },
         { path: 'organization', name: 'Organization', component: Organization },
         { path: 'users', name: 'Users', component: Users },
         { path: 'file', name: 'File', component: File },

@@ -11,7 +11,8 @@ export const fileApi = {
       fileName: params.fileName,
       fileMd5: params.fileMd5,
       fileSize: params.fileSize,
-      chunkTotal: params.chunkTotal
+      chunkTotal: params.chunkTotal,
+      knowledgeBaseId: params.knowledgeBaseId
     });
   },
   
@@ -28,7 +29,8 @@ export const fileApi = {
     return http.post('/file/complete', {
       uploadId: params.uploadId,
       fileName: params.fileName,
-      chunkTotalSize: params.chunkTotalSize
+      chunkTotalSize: params.chunkTotalSize,
+      knowledgeBaseId: params.knowledgeBaseId
     });
   },
   

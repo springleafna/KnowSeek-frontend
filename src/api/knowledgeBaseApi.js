@@ -35,6 +35,11 @@ export const knowledgeBaseApi = {
   // 获取单个知识库详情
   getKnowledgeBaseById(id) {
     return http.get(`/knowledgeBase/${id}`);
+  },
+
+  // 按知识库ID获取文件列表
+  listFilesByKnowledgeBaseId(id, params = {}) {
+    return http.get(`/knowledgeBase/getFileList/${id}`, { params });
   }
 };
 

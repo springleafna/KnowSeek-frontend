@@ -107,6 +107,10 @@ const props = defineProps({
   show: {
     type: Boolean,
     default: false
+  },
+  knowledgeBaseId: {
+    type: [String, Number],
+    default: undefined
   }
 })
 
@@ -205,12 +209,13 @@ const handleUpload = async () => {
     const chunkTotal = Math.ceil(file.size / uploadStatus.chunkSize)
     uploadStatus.totalChunks = chunkTotal
     
-    // 3. 初始化上传
+    // 3. 初始化上传（携带知识库ID）
     const initResult = await fileApi.initUpload({
       fileName: file.name,
       fileMd5: fileMd5,
       fileSize: file.size,
-      chunkTotal: chunkTotal
+      chunkTotal: chunkTotal,
+      knowledgeBaseId: props.knowledgeBaseId
     })
     
     // 4. 检查是否已上传（秒传）
@@ -229,10 +234,13 @@ const handleUpload = async () => {
     // 6. 开始分片上传
     const completeResult = await uploadChunks(file, initResult.partUploadUrls)
     
-    // 7. 显示上传结果
-    if (completeResult.location) {
-      console.log('文件上传成功，访问地址:', completeResult.location)
-    }
+    // 7. 完成上传（携带知识库ID）
+    await fileApi.completeUpload({
+      uploadId: uploadStatus.uploadId,
+      fileName: file.name,
+      chunkTotalSize: uploadStatus.totalChunks,
+      knowledgeBaseId: props.knowledgeBaseId
+    })
     
     message.success('文件上传成功！')
     emit('uploaded')
@@ -351,19 +359,8 @@ const uploadChunks = async (file, partUploadUrls) => {
     throw new Error(`以下分片上传失败: ${errorMessages}`);
   }
   
-  // 所有分片上传完成后，调用完成接口
-  const completeResult = await fileApi.completeUpload({
-    uploadId: uploadStatus.uploadId,
-    fileName: file.name,
-    chunkTotalSize: uploadStatus.totalChunks
-  });
-  
-  // 检查是否需要重新上传某些分片
-  if (completeResult.reUpload && completeResult.pendingChunkIndexList.length > 0) {
-    throw new Error(`需要重新上传分片: ${completeResult.pendingChunkIndexList.join(', ')}`);
-  }
-  
-  return completeResult;
+  // 返回完成结果（调用在 handleUpload 中）
+  return { success: true };
 };
 
 // 更新总体上传进度

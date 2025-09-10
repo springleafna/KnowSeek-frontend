@@ -59,7 +59,7 @@
     <div v-if="filteredItems.length > 0">
       <n-grid v-if="viewMode === 'grid'" cols="1 s:2 l:3" x-gap="24" y-gap="24" responsive="screen">
         <n-grid-item v-for="item in filteredItems" :key="item.id">
-          <n-card :segmented="{ content: true, footer: true }" class="kb-card kb-card--hover">
+          <n-card :segmented="{ content: true, footer: true }" class="kb-card kb-card--hover" @click="onView(item)" style="cursor: pointer;">
             <template #header>
               <div class="kb-card-header">
                 <div class="kb-type">
@@ -90,9 +90,9 @@
 
             <template #footer>
               <n-space>
-                <n-button size="small" type="primary" secondary @click="onView(item)">查看</n-button>
-                <n-button size="small" tertiary @click="onDownload(item)">下载</n-button>
-                <n-button size="small" @click="onEdit(item)">编辑</n-button>
+                <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
+                <n-button size="small" tertiary @click.stop="onDownload(item)">下载</n-button>
+                <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
               </n-space>
             </template>
           </n-card>
@@ -100,7 +100,7 @@
       </n-grid>
 
       <div v-else class="kb-list">
-        <n-card v-for="item in filteredItems" :key="item.id" :segmented="{ content: true, footer: true }" class="kb-card-list kb-card kb-card--hover">
+        <n-card v-for="item in filteredItems" :key="item.id" :segmented="{ content: true, footer: true }" class="kb-card-list kb-card kb-card--hover" @click="onView(item)" style="cursor: pointer;">
           <template #header>
             <div class="kb-list-header">
               <div>
@@ -124,9 +124,9 @@
           </div>
           <template #footer>
             <n-space>
-              <n-button size="small" type="primary" secondary @click="onView(item)">查看</n-button>
-              <n-button size="small" tertiary @click="onDownload(item)">下载</n-button>
-              <n-button size="small" @click="onEdit(item)">编辑</n-button>
+              <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
+              <n-button size="small" tertiary @click.stop="onDownload(item)">下载</n-button>
+              <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
             </n-space>
           </template>
         </n-card>
@@ -146,10 +146,10 @@
     <n-modal v-model:show="showEditModal" :title="isEdit ? '编辑知识库' : '新增知识库'" preset="dialog">
       <n-form ref="formRef" :model="formModel" :rules="formRules" label-placement="left" label-width="80">
         <n-form-item label="名称" path="name">
-          <n-input v-model:value="formModel.name" placeholder="请输入名称" maxlength="50" show-count />
+          <n-input v-model:value="formModel.name" placeholder="请输入名称" maxlength="20" show-count />
         </n-form-item>
         <n-form-item label="描述" path="description">
-          <n-input v-model:value="formModel.description" type="textarea" placeholder="请输入描述" :autosize="{ minRows: 3, maxRows: 5 }" />
+          <n-input v-model:value="formModel.description" type="textarea" placeholder="请输入描述" maxlength="50" show-count :autosize="{ minRows: 3, maxRows: 5 }" />
         </n-form-item>
       </n-form>
       <template #action>
@@ -168,8 +168,10 @@ import { useMessage, NInput, NButton, NGrid, NGridItem, NCard, NTag, NEmpty, NTe
 import { knowledgeBaseApi } from '@/api/knowledgeBaseApi';
 // 额外引入的组件（仅用于类型提示与自动引入）
 import { NForm, NFormItem, NModal } from 'naive-ui';
+import { useRouter } from 'vue-router';
 
 const message = useMessage();
+const router = useRouter();
 
 const searchTerm = ref('');
 const viewMode = ref('grid'); // 'grid' | 'list'
@@ -226,7 +228,7 @@ function setViewMode(mode) {
 }
 
 function onView(item) {
-  message.info(`查看：${item.title}`);
+  router.push({ name: 'KnowledgeDetail', params: { id: item.id } });
 }
 
 function onDownload(item) {
@@ -244,7 +246,13 @@ const formModel = ref({
   description: ''
 });
 const formRules = {
-  name: { required: true, message: '请输入名称', trigger: 'blur' }
+  name: [
+    { required: true, message: '请输入名称', trigger: 'blur' },
+    { max: 20, message: '名称最多20个字', trigger: ['input', 'blur'] }
+  ],
+  description: [
+    { max: 50, message: '描述最多50个字', trigger: ['input', 'blur'] }
+  ]
 };
 
 function openCreate() {
@@ -350,6 +358,10 @@ onMounted(fetchList);
 .kb-card-desc {
   color: #6b7280;
   margin-top: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .kb-card-header {
   display: flex;

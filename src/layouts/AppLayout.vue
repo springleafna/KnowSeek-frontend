@@ -35,7 +35,7 @@
 
   display: grid;
   grid-template-columns: 240px 1fr;
-  height: 100vh;
+  height: 100%;
   background: var(--bg-page);
   color: var(--text-primary);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -82,7 +82,7 @@
 }
 
 .content {
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   background: var(--bg-page);
 }
