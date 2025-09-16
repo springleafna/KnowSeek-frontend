@@ -129,6 +129,7 @@
           </div>
 
           <template #footer>
+            <div ref="inputAreaRef">
             <n-space vertical :size="12">
               <n-input
                 v-model:value="inputText"
@@ -170,6 +171,7 @@
                 </n-space>
               </n-space>
             </n-space>
+            </div>
           </template>
         </n-card>
       </n-layout>
@@ -179,11 +181,6 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import { 
-  NConfigProvider, NLayout, NLayoutSider, NCard, NButton, NInput, 
-  NSpace, NH3, NScrollbar, NSpin, NEllipsis, NText, NEmpty, 
-  NCheckbox, NTag
-} from 'naive-ui'
 import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
@@ -262,6 +259,7 @@ const inputText = ref('')
 const useKnowledgeBase = ref(true)
 const chatBodyRef = ref(null)
 const chatBodyBottomRef = ref(null)
+const inputAreaRef = ref(null)
 
 const streamingText = ref('')
 let streamCtrl = null
@@ -296,11 +294,21 @@ function formatTime(t) {
 
 function scrollToBottom() {
   nextTick(() => {
+    // 优先滚动到输入区域
+    const inputArea = inputAreaRef.value
+    if (inputArea && typeof inputArea.scrollIntoView === 'function') {
+      inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      return
+    }
+    
+    // 备用方案：滚动到消息底部
     const bottom = chatBodyBottomRef.value
     if (bottom && typeof bottom.scrollIntoView === 'function') {
       bottom.scrollIntoView({ behavior: 'smooth', block: 'end' })
       return
     }
+    
+    // 最后备用方案：直接设置滚动位置
     const el = chatBodyRef.value
     if (!el) return
     el.scrollTop = el.scrollHeight
@@ -532,7 +540,7 @@ onMounted(async () => {
 
 <style scoped>
 .chat-layout {
-  height: calc(100vh - 64px);
+  height: 93vh;
   box-sizing: border-box;
 }
 
