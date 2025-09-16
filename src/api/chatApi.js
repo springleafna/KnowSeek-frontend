@@ -7,7 +7,7 @@ export const chatApi = {
   sendMessage(params) {
     return http.post('/chat/send', {
       message: params.message,
-      conversationId: params.conversationId,
+      sessionId: params.sessionId,
       useKnowledgeBase: params.useKnowledgeBase,
     });
   },
@@ -35,7 +35,7 @@ export const chatApi = {
       headers,
       body: JSON.stringify({
         message: params.message,
-        conversationId: params.conversationId,
+        sessionId: params.sessionId,
         useKnowledgeBase: params.useKnowledgeBase,
       }),
       signal,
@@ -97,32 +97,38 @@ export const chatApi = {
     };
   },
 
-  // 清除对话历史：DELETE /chat/conversation/{conversationId}
-  clearConversation(conversationId) {
-    return http.delete(`/chat/conversation/${encodeURIComponent(conversationId)}`);
+  // 会话管理（Session）相关接口
+  // 获取用户会话列表：GET /chat/sessions
+  getSessions() {
+    return http.get('/chat/sessions');
   },
 
-  // 获取会话列表：GET /chat/conversations
-  getConversations() {
-    return http.get('/chat/conversations');
-  },
-
-  // 新建会话：POST /chat/conversations
-  createConversation(params) {
-    return http.post('/chat/conversations', {
-      title: params?.title,
+  // 新建会话：POST /chat/createSession
+  createSession(params) {
+    return http.post('/chat/createSession', {
+      sessionName: params?.sessionName,
     });
   },
 
-  // 获取会话详情：GET /chat/conversations/{conversationId}
-  getConversation(conversationId) {
-    return http.get(`/chat/conversations/${encodeURIComponent(conversationId)}`);
+  // 获取会话详情：GET /chat/getSession/{sessionId}
+  getSession(sessionId) {
+    return http.get(`/chat/getSession/${encodeURIComponent(sessionId)}`);
   },
 
-  // 删除会话：DELETE /chat/conversations/{conversationId}
-  deleteConversation(conversationId) {
-    return http.delete(`/chat/conversations/${encodeURIComponent(conversationId)}`);
+  // 获取会话消息历史：GET /chat/messages/{sessionId}
+  getSessionMessages(sessionId) {
+    return http.get(`/chat/messages/${encodeURIComponent(sessionId)}`);
+  },
+
+  // 更新会话：PUT /chat/updateSession
+  updateSession(updateDTO) {
+    return http.put('/chat/updateSession', updateDTO);
+  },
+
+  // 删除会话：DELETE /chat/deleteSession/{sessionId}
+  deleteSession(sessionId) {
+    return http.delete(`/chat/deleteSession/${encodeURIComponent(sessionId)}`);
   },
 };
 
-export default chatApi; 
+export default chatApi;

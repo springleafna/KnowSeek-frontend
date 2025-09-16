@@ -15,47 +15,44 @@
             <n-button
               type="primary"
               size="small"
-              @click="handleCreateConversation"
-              :loading="loading.conversations"
+              @click="handleCreateSession"
+              :loading="loading.sessions"
             >
               新建
             </n-button>
           </n-space>
           
           <n-scrollbar style="flex: 1;">
-            <n-spin :show="loading.conversations">
-              <n-space vertical :size="8" v-if="!loading.conversations">
+            <n-spin :show="loading.sessions">
+              <n-space vertical :size="8" v-if="!loading.sessions">
                 <n-card
-                  v-for="item in conversations"
-                  :key="item.conversationId"
+                  v-for="item in sessions"
+                  :key="item.id"
                   size="small"
                   hoverable
-                  :class="{ 'active-conversation': item.conversationId === activeConversationId }"
-                  @click="selectConversation(item.conversationId)"
+                  :class="{ 'active-conversation': item.id === activeSessionId }"
+                  @click="selectSession(item.id)"
                   style="cursor: pointer;"
                 >
                   <template #header>
-                    <n-ellipsis>{{ item.title || '未命名会话' }}</n-ellipsis>
+                    <n-ellipsis>{{ item.sessionName || '未命名会话' }}</n-ellipsis>
                   </template>
                   <template #header-extra>
                     <n-button
                       text
                       type="error"
                       size="tiny"
-                      @click.stop="handleDeleteConversation(item.conversationId)"
+                      @click.stop="handleDeleteSession(item.id)"
                     >
                       删除
                     </n-button>
                   </template>
-                  <n-space vertical :size="4">
-                    <n-ellipsis>{{ item.lastMessage || '暂无消息' }}</n-ellipsis>
-                    <n-text depth="3" :style="{ fontSize: '12px' }">
-                      {{ formatTime(item.lastMessageTime || item.createTime) }}
-                    </n-text>
-                  </n-space>
+                  <n-text depth="3" :style="{ fontSize: '12px' }">
+                    {{ formatTime(item.updatedAt || item.createdAt) }}
+                  </n-text>
                 </n-card>
                 
-                <n-empty v-if="conversations.length === 0" description="暂无会话，点击「新建」开始" />
+                <n-empty v-if="sessions.length === 0" description="暂无会话，发送消息将自动创建" />
               </n-space>
             </n-spin>
           </n-scrollbar>
@@ -66,11 +63,11 @@
         <n-card style="flex: 1; display: flex; flex-direction: column;" :bordered="false">
           <template #header>
             <n-space justify="space-between" align="center">
-              <n-h3 :depth="3" style="margin: 0;">{{ activeConversationTitle }}</n-h3>
+              <n-h3 :depth="3" style="margin: 0;">{{ activeSessionTitle }}</n-h3>
               <n-button
                 ghost
                 @click="handleClearHistory"
-                :disabled="!activeConversationId"
+                :disabled="!activeSessionId"
                 :loading="loading.clearing"
               >
                 清空
@@ -258,8 +255,8 @@ function renderMarkdown(content) {
   }
 }
 
-const conversations = ref([])
-const activeConversationId = ref('')
+const sessions = ref([])
+const activeSessionId = ref('')
 const messages = ref([])
 const inputText = ref('')
 const useKnowledgeBase = ref(true)
@@ -270,16 +267,16 @@ const streamingText = ref('')
 let streamCtrl = null
 
 const loading = reactive({
-  conversations: false,
+  sessions: false,
   sending: false,
   streaming: false,
   clearing: false,
 })
 
 const canSend = computed(() => !!inputText.value.trim() && !loading.sending)
-const activeConversationTitle = computed(() => {
-  const found = conversations.value.find(c => c.conversationId === activeConversationId.value)
-  return found?.title || '新会话'
+const activeSessionTitle = computed(() => {
+  const found = sessions.value.find(s => s.id === activeSessionId.value)
+  return found?.sessionName || '新会话'
 })
 
 function formatTime(t) {
@@ -310,66 +307,81 @@ function scrollToBottom() {
   })
 }
 
-async function loadConversations() {
-  loading.conversations = true
+async function loadSessions() {
+  loading.sessions = true
   try {
-    const list = await chatApi.getConversations()
-    conversations.value = Array.isArray(list) ? list : []
-    if (!activeConversationId.value && conversations.value.length > 0) {
-      activeConversationId.value = conversations.value[0].conversationId
+    const list = await chatApi.getSessions()
+    sessions.value = Array.isArray(list) ? list : []
+    if (!activeSessionId.value && sessions.value.length > 0) {
+      activeSessionId.value = sessions.value[0].id
     }
   } catch (e) {
     console.error('获取会话失败', e)
   } finally {
-    loading.conversations = false
+    loading.sessions = false
   }
 }
 
-async function selectConversation(id) {
-  if (id === activeConversationId.value) return
-  activeConversationId.value = id
-  await loadConversationDetail(id)
+async function selectSession(id) {
+  if (id === activeSessionId.value) return
+  activeSessionId.value = id
+  await loadSessionDetail(id)
 }
 
-async function loadConversationDetail(id) {
+async function loadSessionDetail(id) {
   try {
-    await chatApi.getConversation(id)
-    messages.value = []
-  } catch (e) {
-    console.error('获取会话详情失败', e)
-  }
-}
-
-async function handleCreateConversation() {
-  try {
-    const conv = await chatApi.createConversation({ title: `会话 ${conversations.value.length + 1}` })
-    await loadConversations()
-    if (conv?.conversationId) {
-      activeConversationId.value = conv.conversationId
-    }
-  } catch (e) {
-    console.error('创建会话失败', e)
-  }
-}
-
-async function handleDeleteConversation(id) {
-  try {
-    await chatApi.deleteConversation(id)
-    if (id === activeConversationId.value) {
-      activeConversationId.value = ''
+    // 获取会话基本信息
+    await chatApi.getSession(id)
+    
+    // 获取会话历史消息
+    const historyMessages = await chatApi.getSessionMessages(id)
+    if (Array.isArray(historyMessages)) {
+      // 转换后端消息格式为前端显示格式
+      messages.value = historyMessages.map(msg => ({
+        role: msg.role,
+        message: msg.content,
+        timestamp: msg.createdAt,
+        fromKnowledgeBase: msg.metadata && msg.metadata.includes('knowledgeBase')
+      }))
+    } else {
       messages.value = []
     }
-    await loadConversations()
+    
+    // 滚动到底部显示最新消息
+    nextTick(() => {
+      scrollToBottom()
+    })
+  } catch (e) {
+    console.error('获取会话详情失败', e)
+    messages.value = []
+  }
+}
+
+function handleCreateSession() {
+  // 不再直接创建会话，只是设置activeSessionId为空，清空消息列表
+  // 实际的会话创建将在用户发送消息时进行
+  activeSessionId.value = ''
+  messages.value = []
+}
+
+async function handleDeleteSession(id) {
+  try {
+    await chatApi.deleteSession(id)
+    if (id === activeSessionId.value) {
+      activeSessionId.value = ''
+      messages.value = []
+    }
+    await loadSessions()
   } catch (e) {
     console.error('删除会话失败', e)
   }
 }
 
 async function handleClearHistory() {
-  if (!activeConversationId.value) return
+  if (!activeSessionId.value) return
   loading.clearing = true
   try {
-    await chatApi.clearConversation(activeConversationId.value)
+    // 后端未提供清空历史接口，这里仅清空本地消息展示
     messages.value = []
   } catch (e) {
     console.error('清空历史失败', e)
@@ -382,12 +394,12 @@ async function handleSend(stream) {
   const text = inputText.value.trim()
   if (!text) return
 
-  if (!activeConversationId.value) {
+  if (!activeSessionId.value) {
     try {
-      const conv = await chatApi.createConversation({ title: `会话 ${conversations.value.length + 1}` })
-      activeConversationId.value = conv?.conversationId || ''
-      await loadConversations()
-      if (!activeConversationId.value) return
+      const sess = await chatApi.createSession({ sessionName: `会话 ${sessions.value.length + 1}` })
+      activeSessionId.value = sess?.id || ''
+      await loadSessions()
+      if (!activeSessionId.value) return
     } catch (e) {
       return
     }
@@ -402,7 +414,7 @@ async function handleSend(stream) {
     try {
       const res = await chatApi.sendMessage({
         message: text,
-        conversationId: activeConversationId.value,
+        sessionId: activeSessionId.value,
         useKnowledgeBase: useKnowledgeBase.value,
       })
       messages.value.push({
@@ -411,9 +423,9 @@ async function handleSend(stream) {
         timestamp: res?.timestamp || new Date(),
         fromKnowledgeBase: res?.fromKnowledgeBase,
       })
-      if (res?.conversationId && res.conversationId !== activeConversationId.value) {
-        activeConversationId.value = res.conversationId
-        await loadConversations()
+      if (res?.sessionId && res.sessionId !== activeSessionId.value) {
+        activeSessionId.value = res.sessionId
+        await loadSessions()
       }
     } catch (e) {
       messages.value.push({ role: 'assistant', message: `错误：${e.message}`, timestamp: new Date() })
@@ -430,7 +442,7 @@ async function handleSend(stream) {
     const ctrl = chatApi.streamMessage(
       {
         message: text,
-        conversationId: activeConversationId.value,
+        sessionId: activeSessionId.value,
         useKnowledgeBase: useKnowledgeBase.value,
       },
       {
@@ -439,8 +451,8 @@ async function handleSend(stream) {
             streamingText.value += data
           } else if (data && typeof data === 'object') {
             if (data.message) streamingText.value += data.message
-            if (data.conversationId && data.conversationId !== activeConversationId.value) {
-              activeConversationId.value = data.conversationId
+            if (data.sessionId && data.sessionId !== activeSessionId.value) {
+              activeSessionId.value = data.sessionId
             }
           }
           scrollToBottom()
@@ -451,7 +463,7 @@ async function handleSend(stream) {
             streamingText.value = ''
           }
           loading.streaming = false
-          loadConversations()
+          loadSessions()
           scrollToBottom()
         },
         onError(err) {
@@ -511,9 +523,9 @@ function fallbackCopy(text) {
 }
 
 onMounted(async () => {
-  await loadConversations()
-  if (activeConversationId.value) {
-    await loadConversationDetail(activeConversationId.value)
+  await loadSessions()
+  if (activeSessionId.value) {
+    await loadSessionDetail(activeSessionId.value)
   }
 })
 </script>
@@ -742,4 +754,4 @@ onMounted(async () => {
 .chat-body::-webkit-scrollbar-thumb:hover {
   background: var(--n-scrollbar-color-hover);
 }
-</style> 
+</style>
