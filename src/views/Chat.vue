@@ -296,24 +296,18 @@ function formatTime(t) {
 
 function scrollToBottom() {
   nextTick(() => {
-    // 优先滚动到输入区域
-    const inputArea = inputAreaRef.value
-    if (inputArea && typeof inputArea.scrollIntoView === 'function') {
-      inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    // 直接滚动聊天区域到底部
+    const chatBody = chatBodyRef.value
+    if (chatBody) {
+      chatBody.scrollTop = chatBody.scrollHeight
       return
     }
-    
-    // 备用方案：滚动到消息底部
+
+    // 备用方案：使用scrollIntoView滚动到底部标记
     const bottom = chatBodyBottomRef.value
     if (bottom && typeof bottom.scrollIntoView === 'function') {
       bottom.scrollIntoView({ behavior: 'smooth', block: 'end' })
-      return
     }
-    
-    // 最后备用方案：直接设置滚动位置
-    const el = chatBodyRef.value
-    if (!el) return
-    el.scrollTop = el.scrollHeight
   })
 }
 
@@ -342,7 +336,7 @@ async function loadSessionDetail(id) {
   try {
     // 获取会话基本信息
     await chatApi.getSession(id)
-    
+
     // 获取会话历史消息
     const historyMessages = await chatApi.getSessionMessages(id)
     if (Array.isArray(historyMessages)) {
@@ -356,11 +350,19 @@ async function loadSessionDetail(id) {
     } else {
       messages.value = []
     }
-    
-    // 滚动到底部显示最新消息
-    nextTick(() => {
+
+    // 多次尝试滚动到底部，确保DOM渲染完成
+    await nextTick()
+    scrollToBottom()
+
+    // 延迟再次滚动，确保内容完全加载
+    setTimeout(() => {
       scrollToBottom()
-    })
+    }, 100)
+
+    setTimeout(() => {
+      scrollToBottom()
+    }, 300)
   } catch (e) {
     console.error('获取会话详情失败', e)
     messages.value = []
@@ -495,6 +497,17 @@ function abortStream() {
   if (streamCtrl && typeof streamCtrl.abort === 'function') {
     streamCtrl.abort()
   }
+
+  // 保存已经流式输出的内容到消息列表
+  if (streamingText.value.trim()) {
+    messages.value.push({
+      role: 'assistant',
+      message: streamingText.value,
+      timestamp: new Date()
+    })
+    scrollToBottom()
+  }
+
   loading.streaming = false
   streamingText.value = ''
 }
@@ -542,7 +555,7 @@ onMounted(async () => {
 
 <style scoped>
 .chat-layout {
-  height: 92vh;
+  height: calc(100vh - 8vh); /* 减去浏览器UI空间 */
   box-sizing: border-box;
 }
 
@@ -551,7 +564,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  padding-bottom: 0; /* 输入框会占据底部空间 */
+  padding-bottom: 20px; /* 为固定输入框预留足够空间 */
   min-height: 0; /* 重要：允许flex子元素收缩 */
 }
 
@@ -632,6 +645,7 @@ onMounted(async () => {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 16px;
+  padding-bottom: 20px; /* 增加底部内边距，避免与固定输入框重叠 */
   background: var(--n-body-color);
   min-height: 0;
 }
