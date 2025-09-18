@@ -59,9 +59,10 @@
         </n-space>
       </n-layout-sider>
 
-      <n-layout content-style="display: flex; flex-direction: column; padding: 16px;">
-        <n-card style="flex: 1; display: flex; flex-direction: column;" :bordered="false">
-          <template #header>
+      <n-layout content-style="display: flex; flex-direction: column; height: 100%; position: relative;">
+        <!-- 聊天消息区域 -->
+        <div class="chat-main">
+          <div class="chat-header">
             <n-space justify="space-between" align="center">
               <n-h3 :depth="3" style="margin: 0;">{{ activeSessionTitle }}</n-h3>
               <n-button
@@ -73,11 +74,11 @@
                 清空
               </n-button>
             </n-space>
-          </template>
+          </div>
 
           <div class="chat-body" ref="chatBodyRef">
             <n-empty v-if="messages.length === 0" description="开始你的提问吧～" />
-            
+
             <n-space vertical :size="16" v-else>
               <div
                 v-for="(msg, idx) in messages"
@@ -89,14 +90,14 @@
                   :class="`message-card ${msg.role}`"
                   :content-style="{ padding: '12px 16px' }"
                 >
-                  <div 
-                    v-if="msg.role === 'assistant'" 
-                    v-html="renderMarkdown(msg.message)" 
+                  <div
+                    v-if="msg.role === 'assistant'"
+                    v-html="renderMarkdown(msg.message)"
                     class="markdown-content"
                     @click="handleCodeCopy"
                   ></div>
                   <div v-else class="user-message">{{ msg.message }}</div>
-                  
+
                   <template #footer>
                     <n-space :size="8" align="center">
                       <n-text depth="3" :style="{ fontSize: '12px' }">
@@ -116,8 +117,8 @@
                   class="message-card assistant streaming"
                   :content-style="{ padding: '12px 16px' }"
                 >
-                  <div 
-                    v-html="renderMarkdown(streamingText)" 
+                  <div
+                    v-html="renderMarkdown(streamingText)"
                     class="markdown-content"
                     @click="handleCodeCopy"
                   ></div>
@@ -127,9 +128,11 @@
             </n-space>
             <div ref="chatBodyBottomRef" style="height: 1px;"></div>
           </div>
+        </div>
 
-          <template #footer>
-            <div ref="inputAreaRef">
+        <!-- 固定在底部的输入区域 -->
+        <div class="chat-input-fixed" ref="inputAreaRef">
+          <n-card :bordered="true">
             <n-space vertical :size="12">
               <n-input
                 v-model:value="inputText"
@@ -139,12 +142,12 @@
                 :autosize="{ minRows: 3, maxRows: 6 }"
                 @keydown="handleKeydown"
               />
-              
+
               <n-space justify="space-between" align="center">
                 <n-checkbox v-model:checked="useKnowledgeBase">
                   使用知识库
                 </n-checkbox>
-                
+
                 <n-space :size="8">
                   <n-button
                     type="primary"
@@ -171,9 +174,8 @@
                 </n-space>
               </n-space>
             </n-space>
-            </div>
-          </template>
-        </n-card>
+          </n-card>
+        </div>
       </n-layout>
     </n-layout>
   </n-config-provider>
@@ -540,12 +542,58 @@ onMounted(async () => {
 
 <style scoped>
 .chat-layout {
-  height: 93vh;
+  height: 92vh;
   box-sizing: border-box;
 }
 
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  padding-bottom: 0; /* 输入框会占据底部空间 */
+  min-height: 0; /* 重要：允许flex子元素收缩 */
+}
+
+.chat-header {
+  padding: 16px;
+  background: var(--n-card-color);
+  border-radius: var(--n-border-radius);
+  margin-bottom: 16px;
+  flex-shrink: 0; /* 头部不收缩 */
+}
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  background: var(--n-card-color);
+  border-radius: var(--n-border-radius);
+  min-height: 0; /* 重要：允许滚动 */
+  margin-bottom: 180px; /* 为底部输入框留出空间 */
+}
+
+.chat-input-fixed {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: var(--n-body-color);
+  border-top: 1px solid var(--n-border-color);
+  z-index: 100;
+}
+
 .active-conversation {
-  background: var(--n-item-color-hover) !important;
+  background: var(--n-color-primary-popover) !important;
+  color: var(--n-color-primary) !important;
+  font-weight: 600;
+}
+
+.active-conversation .n-card__header {
+  font-weight: 600 !important;
+  color: var(--n-color-primary) !important;
 }
 
 .message-wrapper {
@@ -586,7 +634,6 @@ onMounted(async () => {
   padding: 16px;
   background: var(--n-body-color);
   min-height: 0;
-  max-height: 100%;
 }
 
 .markdown-content {
@@ -744,22 +791,23 @@ onMounted(async () => {
     opacity: 0.8;
   }
 }
-
 /* 滚动条样式 */
 .chat-body::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .chat-body::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--n-scrollbar-track-color, #f5f5f5);
+  border-radius: 4px;
 }
 
 .chat-body::-webkit-scrollbar-thumb {
-  background: var(--n-scrollbar-color);
-  border-radius: 3px;
+  background: var(--n-scrollbar-color, #c0c0c0);
+  border-radius: 4px;
+  border: 1px solid var(--n-border-color, #e0e0e0);
 }
 
 .chat-body::-webkit-scrollbar-thumb:hover {
-  background: var(--n-scrollbar-color-hover);
+  background: var(--n-scrollbar-color-hover, #a0a0a0);
 }
 </style>

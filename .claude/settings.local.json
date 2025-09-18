@@ -2,15 +2,6 @@
   "permissions": {
     "allow": [
       "Read(/D:\\FrontProject\\KnowSeek-frontend/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
-      "Read(/D:\\FrontProject\\KnowSeek-frontend\\src\\views/**)",
       "Bash(npm run dev:*)"
     ],
     "deny": [],

@@ -37,7 +37,7 @@ export const fileApi = {
   calculateFileMD5(file) {
     return new Promise((resolve, reject) => {
       const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-      const chunkSize = 2097152; // 2MB
+      const chunkSize = 5242880; // 5MB每分片大小
       const chunks = Math.ceil(file.size / chunkSize);
       let currentChunk = 0;
       const spark = new SparkMD5.ArrayBuffer();

@@ -1,7 +1,6 @@
 <template>
   <div class="app-layout">
     <aside class="app-sidebar">
-      <div class="brand">KnowSeek</div>
       <nav class="menu">
         <router-link to="/chat" class="menu-item" active-class="active">AI对话</router-link>
         <router-link to="/file" class="menu-item" active-class="active">文件列表</router-link>
