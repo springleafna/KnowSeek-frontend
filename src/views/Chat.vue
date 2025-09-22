@@ -38,14 +38,26 @@
                     <n-ellipsis>{{ item.sessionName || '未命名会话' }}</n-ellipsis>
                   </template>
                   <template #header-extra>
-                    <n-button
-                      text
-                      type="error"
-                      size="tiny"
-                      @click.stop="handleDeleteSession(item.id)"
+                    <n-dropdown
+                      :options="getSessionMenuOptions(item.id)"
+                      @select="handleSessionMenuSelect"
+                      trigger="click"
+                      placement="bottom-start"
                     >
-                      删除
-                    </n-button>
+                      <n-button
+                        text
+                        size="tiny"
+                        @click.stop
+                      >
+                        <n-icon :size="16">
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                            <circle cx="12" cy="5" r="2" fill="currentColor"/>
+                            <circle cx="12" cy="19" r="2" fill="currentColor"/>
+                          </svg>
+                        </n-icon>
+                      </n-button>
+                    </n-dropdown>
                   </template>
                   <n-text depth="3" :style="{ fontSize: '12px' }">
                     {{ formatTime(item.updatedAt || item.createdAt) }}
@@ -182,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, h } from 'vue'
 import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
@@ -266,6 +278,10 @@ const inputAreaRef = ref(null)
 const streamingText = ref('')
 let streamCtrl = null
 
+// 重命名相关状态
+const renamingSessionId = ref('')
+const newSessionName = ref('')
+
 const loading = reactive({
   sessions: false,
   sending: false,
@@ -291,6 +307,76 @@ function formatTime(t) {
     return `${y}-${m}-${d} ${hh}:${mm}`
   } catch (e) {
     return ''
+  }
+}
+
+// 获取会话菜单选项
+function getSessionMenuOptions(sessionId) {
+  return [
+    {
+      label: '重命名',
+      key: `rename-${sessionId}`,
+      icon: () => h('svg', {
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        xmlns: 'http://www.w3.org/2000/svg',
+        style: { width: '16px', height: '16px' }
+      }, [
+        h('path', {
+          d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7',
+          stroke: 'currentColor',
+          'stroke-width': '2',
+          fill: 'none',
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        }),
+        h('path', {
+          d: 'm18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
+          stroke: 'currentColor',
+          'stroke-width': '2',
+          fill: 'none',
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        })
+      ])
+    },
+    {
+      label: '删除',
+      key: `delete-${sessionId}`,
+      icon: () => h('svg', {
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        xmlns: 'http://www.w3.org/2000/svg',
+        style: { width: '16px', height: '16px' }
+      }, [
+        h('path', {
+          d: 'M3 6h18',
+          stroke: 'currentColor',
+          'stroke-width': '2',
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        }),
+        h('path', {
+          d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+          stroke: 'currentColor',
+          'stroke-width': '2',
+          fill: 'none',
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        })
+      ])
+    }
+  ]
+}
+
+// 处理会话菜单选择
+async function handleSessionMenuSelect(key) {
+  const [action, sessionId] = key.split('-')
+
+  if (action === 'delete') {
+    await handleDeleteSession(sessionId)
+  } else if (action === 'rename') {
+    await handleRenameSession(sessionId)
   }
 }
 
@@ -386,6 +472,25 @@ async function handleDeleteSession(id) {
     await loadSessions()
   } catch (e) {
     console.error('删除会话失败', e)
+  }
+}
+
+// 处理重命名会话
+async function handleRenameSession(sessionId) {
+  const session = sessions.value.find(s => s.id === sessionId)
+  if (!session) return
+
+  const newName = prompt('请输入新的会话名称：', session.sessionName || '未命名会话')
+  if (!newName || !newName.trim()) return
+
+  try {
+    // 调用重命名API
+    await chatApi.updateSession(sessionId, { sessionName: newName.trim() })
+    // 重新加载会话列表
+    await loadSessions()
+  } catch (e) {
+    console.error('重命名会话失败', e)
+    alert('重命名失败，请重试')
   }
 }
 
@@ -651,13 +756,15 @@ onMounted(async () => {
 }
 
 .markdown-content {
-  line-height: 1.6;
-  font-size: 14px;
+  line-height: 1.7;
+  font-size: 15px;
   color: var(--n-text-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .markdown-content p {
-  margin: 8px 0;
+  margin: 12px 0;
+  color: var(--n-text-color);
 }
 
 .markdown-content h1,
@@ -666,9 +773,10 @@ onMounted(async () => {
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-  margin: 16px 0 8px 0;
+  margin: 20px 0 12px 0;
   font-weight: 600;
   color: var(--n-text-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .markdown-content h1 { font-size: 1.5em; }
@@ -680,23 +788,26 @@ onMounted(async () => {
 
 .markdown-content code {
   background: var(--n-code-color);
-  padding: 2px 4px;
+  padding: 3px 6px;
   border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 0.9em;
   color: var(--n-text-color);
+  border: 1px solid var(--n-border-color);
 }
 
 .markdown-content pre {
   background: var(--n-code-color);
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-radius: 8px;
   overflow-x: auto;
-  margin: 12px 0;
+  margin: 16px 0;
   border: 1px solid var(--n-border-color);
   position: relative;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  line-height: 1.5;
 }
 
 .markdown-content pre:hover {
@@ -728,33 +839,43 @@ onMounted(async () => {
 
 .markdown-content blockquote {
   border-left: 4px solid var(--n-color-primary);
-  padding-left: 12px;
-  margin: 12px 0;
+  padding-left: 16px;
+  margin: 16px 0;
   color: var(--n-text-color-depth-2);
   font-style: italic;
+  background: var(--n-card-color);
+  padding: 12px 16px;
+  border-radius: 4px;
 }
 
 .markdown-content ul,
 .markdown-content ol {
-  padding-left: 20px;
-  margin: 8px 0;
+  padding-left: 24px;
+  margin: 12px 0;
+  line-height: 1.6;
 }
 
 .markdown-content li {
-  margin: 4px 0;
+  margin: 6px 0;
+  line-height: 1.6;
 }
 
 .markdown-content table {
   border-collapse: collapse;
   width: 100%;
-  margin: 12px 0;
+  margin: 16px 0;
+  font-size: 14px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .markdown-content th,
 .markdown-content td {
   border: 1px solid var(--n-border-color);
-  padding: 8px 12px;
+  padding: 10px 16px;
   text-align: left;
+  line-height: 1.5;
 }
 
 .markdown-content th {
@@ -778,11 +899,12 @@ onMounted(async () => {
 }
 
 .user-message {
-  line-height: 1.6;
-  font-size: 14px;
+  line-height: 1.7;
+  font-size: 15px;
   color: var(--n-text-color);
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 /* 代码高亮主题适配 */

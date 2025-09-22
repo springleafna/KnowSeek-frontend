@@ -91,7 +91,6 @@
             <template #footer>
               <n-space>
                 <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
-                <n-button size="small" tertiary @click.stop="onDownload(item)">下载</n-button>
                 <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
               </n-space>
             </template>
@@ -125,7 +124,6 @@
           <template #footer>
             <n-space>
               <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
-              <n-button size="small" tertiary @click.stop="onDownload(item)">下载</n-button>
               <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
             </n-space>
           </template>
@@ -229,10 +227,6 @@ function setViewMode(mode) {
 
 function onView(item) {
   router.push({ name: 'KnowledgeDetail', params: { id: item.id } });
-}
-
-function onDownload(item) {
-  message.warning('下载功能待接入');
 }
 
 // 新增 / 编辑 相关

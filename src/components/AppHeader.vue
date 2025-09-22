@@ -68,7 +68,10 @@ const handleSelect = (key) => {
 <template>
   <n-layout-header bordered>
     <div class="nav-container">
-      <n-text tag="h1" class="logo">KnowSeek</n-text>
+      <div class="logo-container">
+        <img src="/logo.png" alt="KnowSeek" class="logo-image">
+        <n-text tag="h1" class="logo">KnowSeek</n-text>
+      </div>
       <n-space>
         <router-link to="/login" v-if="!authStore.isAuthenticated">
           <n-button text>登录</n-button>
@@ -107,6 +110,17 @@ const handleSelect = (key) => {
   width: 100%;
   padding: 0 2rem;
   height: 64px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-image {
+  height: 40px;
+  width: auto;
 }
 
 .logo {
