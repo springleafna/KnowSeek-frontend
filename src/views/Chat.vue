@@ -162,19 +162,12 @@
 
                 <n-space :size="8">
                   <n-button
-                    type="primary"
-                    @click="handleSend(false)"
-                    :disabled="!canSend"
-                    :loading="loading.sending"
-                  >
-                    发送
-                  </n-button>
-                  <n-button
                     v-if="!loading.streaming"
+                    type="primary"
                     @click="handleSend(true)"
                     :disabled="!canSend"
                   >
-                    流式发送
+                    发送
                   </n-button>
                   <n-button
                     v-else
@@ -218,7 +211,7 @@ const handleKeydown = (e) => {
     e.preventDefault();
     
     // 2. 执行你的发送逻辑
-    handleSend(false);
+    handleSend(true);
   }
 }
 
