@@ -664,14 +664,16 @@ onMounted(async () => {
   padding: 16px;
   padding-bottom: 20px; /* 为固定输入框预留足够空间 */
   min-height: 0; /* 重要：允许flex子元素收缩 */
+  background: #f7f8fa;
 }
 
 .chat-header {
   padding: 16px;
-  background: var(--n-card-color);
-  border-radius: var(--n-border-radius);
+  background: #ffffff;
+  border-radius: 12px;
   margin-bottom: 16px;
   flex-shrink: 0; /* 头部不收缩 */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .chat-body {
@@ -679,10 +681,11 @@ onMounted(async () => {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 16px;
-  background: var(--n-card-color);
-  border-radius: var(--n-border-radius);
+  background: #ffffff;
+  border-radius: 12px;
   min-height: 0; /* 重要：允许滚动 */
   margin-bottom: 180px; /* 为底部输入框留出空间 */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .chat-input-fixed {
@@ -691,20 +694,20 @@ onMounted(async () => {
   left: 0;
   right: 0;
   padding: 16px;
-  background: var(--n-body-color);
-  border-top: 1px solid var(--n-border-color);
+  background: #f7f8fa;
   z-index: 100;
 }
 
 .active-conversation {
-  background: var(--n-color-primary-popover) !important;
-  color: var(--n-color-primary) !important;
+  background: #e8f0fe !important;
+  color: #1a73e8 !important;
   font-weight: 600;
+  border-radius: 10px;
 }
 
 .active-conversation .n-card__header {
   font-weight: 600 !important;
-  color: var(--n-color-primary) !important;
+  color: #1a73e8 !important;
 }
 
 .message-wrapper {
@@ -727,15 +730,19 @@ onMounted(async () => {
 }
 
 .message-card.user {
-  background: var(--n-color-primary-popover);
+  background: #e8f0fe;
+  border-radius: 12px;
 }
 
 .message-card.assistant {
-  background: var(--n-card-color);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .message-card.streaming {
-  border: 1px solid var(--n-color-primary);
+  border: 1px solid #1a73e8;
+  border-radius: 12px;
 }
 
 .chat-body {
@@ -744,11 +751,12 @@ onMounted(async () => {
   overflow-x: hidden;
   padding: 16px;
   padding-bottom: 20px; /* 增加底部内边距，避免与固定输入框重叠 */
-  background: var(--n-body-color);
+  background: #f7f8fa;
   min-height: 0;
 }
 
 .markdown-content {
+  margin-left: 20px;
   line-height: 1.7;
   font-size: 15px;
   color: var(--n-text-color);
@@ -790,22 +798,23 @@ onMounted(async () => {
 }
 
 .markdown-content pre {
-  background: var(--n-code-color);
+  background: #f8f9fa;
   padding: 16px 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow-x: auto;
   margin: 16px 0;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid #e5e7eb;
   position: relative;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .markdown-content pre:hover {
-  border-color: var(--n-color-primary);
-  background: var(--n-code-color);
+  border-color: #1a73e8;
+  background: #f8f9fa;
 }
 
 .markdown-content pre::after {
@@ -831,14 +840,15 @@ onMounted(async () => {
 }
 
 .markdown-content blockquote {
-  border-left: 4px solid var(--n-color-primary);
+  border-left: 4px solid #1a73e8;
   padding-left: 16px;
   margin: 16px 0;
   color: var(--n-text-color-depth-2);
   font-style: italic;
-  background: var(--n-card-color);
+  background: #ffffff;
   padding: 12px 16px;
-  border-radius: 4px;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .markdown-content ul,
@@ -877,7 +887,7 @@ onMounted(async () => {
 }
 
 .markdown-content a {
-  color: var(--n-color-primary);
+  color: #1a73e8;
   text-decoration: none;
 }
 
@@ -920,6 +930,66 @@ onMounted(async () => {
     opacity: 0.8;
   }
 }
+/* NaiveUI 按钮圆角样式 */
+:deep(.n-button) {
+  border-radius: 10px !important;
+}
+
+:deep(.n-button--primary-type) {
+  background-color: #1a73e8 !important;
+  border-color: #1a73e8 !important;
+}
+
+:deep(.n-button--primary-type:hover) {
+  background-color: #1557b0 !important;
+  border-color: #1557b0 !important;
+}
+
+:deep(.n-button--primary-type:focus) {
+  background-color: #1557b0 !important;
+  border-color: #1557b0 !important;
+}
+
+/* NaiveUI 输入框圆角样式 */
+:deep(.n-input) {
+  border-radius: 12px !important;
+}
+
+:deep(.n-input__input-el) {
+  border-radius: 12px !important;
+}
+
+:deep(.n-input--textarea .n-input__input-el) {
+  border-radius: 12px !important;
+}
+
+/* NaiveUI 卡片圆角样式 */
+:deep(.n-card) {
+  border-radius: 12px !important;
+}
+
+/* NaiveUI 复选框样式 */
+:deep(.n-checkbox) {
+  border-radius: 6px !important;
+}
+
+:deep(.n-checkbox .n-checkbox-box) {
+  border-radius: 6px !important;
+}
+
+:deep(.n-checkbox .n-checkbox-box__border) {
+  border-radius: 6px !important;
+}
+
+/* NaiveUI 下拉菜单圆角样式 */
+:deep(.n-dropdown-menu) {
+  border-radius: 12px !important;
+}
+
+:deep(.n-dropdown-option) {
+  border-radius: 8px !important;
+}
+
 /* 滚动条样式 */
 .chat-body::-webkit-scrollbar {
   width: 8px;
