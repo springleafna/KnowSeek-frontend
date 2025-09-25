@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, defineProps, defineEmits } from 'vue'
+import { ref, reactive } from 'vue'
 import { useMessage } from 'naive-ui'
 import { fileApi } from '@/api/api'
 

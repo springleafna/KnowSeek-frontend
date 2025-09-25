@@ -66,8 +66,11 @@
                   <n-tag size="small" type="info" round>
                     {{ item.typeLabel }}
                   </n-tag>
+                  <n-tag v-if="authStore.userInfo?.primaryKbId === item.id" size="small" type="success" round>
+                    默认
+                  </n-tag>
                 </div>
-                <n-tag size="small" type="default" round> {{ item.category || '默认' }} </n-tag>
+                <n-tag size="small" type="default" round> {{ item.category || '未分类' }} </n-tag>
               </div>
               <div class="kb-card-title">{{ item.title }}</div>
               <div class="kb-card-desc">{{ item.description || '暂无描述' }}</div>
@@ -89,9 +92,20 @@
             </div>
 
             <template #footer>
-              <n-space>
-                <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
-                <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
+              <n-space justify="space-between">
+                <n-space>
+                  <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
+                  <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
+                </n-space>
+                <n-button
+                  v-if="authStore.userInfo?.primaryKbId !== item.id"
+                  size="small"
+                  type="primary"
+                  quaternary
+                  @click.stop="setPrimary(item)"
+                >
+                  设为默认
+                </n-button>
               </n-space>
             </template>
           </n-card>
@@ -103,10 +117,15 @@
           <template #header>
             <div class="kb-list-header">
               <div>
-                <div class="kb-card-title">{{ item.title }}</div>
+                <div class="kb-card-title">
+                  {{ item.title }}
+                  <n-tag v-if="authStore.userInfo?.primaryKbId === item.id" size="small" type="success" round style="margin-left: 8px">
+                    默认
+                  </n-tag>
+                </div>
                 <div class="kb-card-desc">{{ item.description || '暂无描述' }}</div>
               </div>
-              <n-tag size="small" type="default" round>{{ item.category || '默认' }}</n-tag>
+              <n-tag size="small" type="default" round>{{ item.category || '未分类' }}</n-tag>
             </div>
           </template>
           <div class="kb-tags" v-if="item.tags && item.tags.length">
@@ -122,9 +141,20 @@
             </div>
           </div>
           <template #footer>
-            <n-space>
-              <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
-              <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
+            <n-space justify="space-between">
+              <n-space>
+                <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
+                <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
+              </n-space>
+              <n-button
+                v-if="authStore.userInfo?.primaryKbId !== item.id"
+                size="small"
+                type="primary"
+                quaternary
+                @click.stop="setPrimary(item)"
+              >
+                设为默认
+              </n-button>
             </n-space>
           </template>
         </n-card>
@@ -167,9 +197,11 @@ import { knowledgeBaseApi } from '@/api/knowledgeBaseApi';
 // 额外引入的组件（仅用于类型提示与自动引入）
 import { NForm, NFormItem, NModal } from 'naive-ui';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
 
 const message = useMessage();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const searchTerm = ref('');
 const viewMode = ref('grid'); // 'grid' | 'list'
@@ -195,7 +227,7 @@ function normalize(vo) {
     id: vo.id,
     title: vo.name,
     description: vo.description,
-    category: vo.category || '默认',
+    category: vo.category || '未分类',
     typeLabel: '文档',
     lastUpdated: formatDateTime(vo.createdAt),
     tags: vo.tags || [],
@@ -204,7 +236,7 @@ function normalize(vo) {
 
 const categoryOptions = computed(() => {
   const set = new Set(['全部']);
-  rawItems.value.forEach((it) => set.add(it.category || '默认'));
+  rawItems.value.forEach((it) => set.add(it.category || '未分类'));
   return Array.from(set).map((v) => ({ label: v, value: v }));
 });
 
@@ -306,11 +338,27 @@ async function fetchList() {
   }
 }
 
+async function setPrimary(item) {
+  try {
+    await knowledgeBaseApi.setPrimaryKnowledgeBase(item.id);
+    message.success(`已将"${item.title}"设为默认知识库`);
+
+    // 更新本地用户信息中的 primaryKbId
+    if (authStore.userInfo) {
+      const updatedUserInfo = { ...authStore.userInfo, primaryKbId: item.id };
+      authStore.setUserInfo(updatedUserInfo);
+    }
+  } catch (err) {
+    message.error(err.message || '设置默认知识库失败');
+  }
+}
+
 onMounted(fetchList);
 </script>
 
 <style scoped>
 .kb-container {
+  height: calc(100vh - 8vh);
   padding: 24px;
 }
 .kb-header {

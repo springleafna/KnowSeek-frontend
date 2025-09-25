@@ -40,7 +40,16 @@ export const knowledgeBaseApi = {
   // 按知识库ID获取文件列表
   listFilesByKnowledgeBaseId(id, params = {}) {
     return http.get(`/knowledgeBase/getFileList/${id}`, { params });
+  },
+
+  // 设为用户主知识库
+  setPrimaryKnowledgeBase(id) {
+    return http.post('/knowledgeBase/setPrimary', null, {
+      params: { id }
+    });
   }
 };
+
+
 
 export default knowledgeBaseApi; 

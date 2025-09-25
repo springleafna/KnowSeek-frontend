@@ -9,5 +9,8 @@
 </script>
 
 <style scoped>
-.page { padding: 20px; }
+.page { 
+  height: calc(100vh - 8vh);
+  padding: 20px;
+}
 </style> 

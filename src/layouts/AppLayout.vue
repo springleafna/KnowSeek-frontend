@@ -3,8 +3,8 @@
     <aside class="app-sidebar">
       <nav class="menu">
         <router-link to="/chat" class="menu-item" active-class="active">AI对话</router-link>
-        <router-link to="/file" class="menu-item" active-class="active">文件列表</router-link>
         <router-link to="/knowledge" class="menu-item" active-class="active">知识库</router-link>
+        <router-link to="/file" class="menu-item" active-class="active">文件列表</router-link>
         <router-link to="/organization" class="menu-item" active-class="active">组织管理</router-link>
         <router-link to="/users" class="menu-item" active-class="active">用户管理</router-link>
       </nav>

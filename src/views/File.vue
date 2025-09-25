@@ -133,7 +133,7 @@
   
   <style scoped>
   .file-page {
-    height: 100%;
+    height: calc(100vh - 8vh);
     padding: 16px 20px;
     box-sizing: border-box;
   }
