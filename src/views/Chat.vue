@@ -13,10 +13,11 @@
           <n-space justify="space-between" align="center">
             <n-h3 :depth="3" style="margin: 0;">会话</n-h3>
             <n-button
-              type="primary"
+              round
               size="small"
               @click="handleCreateSession"
               :loading="loading.sessions"
+              color="#387BE9"
             >
               新建
             </n-button>
@@ -78,11 +79,16 @@
             <n-space justify="space-between" align="center">
               <n-h3 :depth="3" style="margin: 0;">{{ activeSessionTitle }}</n-h3>
               <n-button
-                ghost
+                strong secondary round
                 @click="handleClearHistory"
                 :disabled="!activeSessionId"
                 :loading="loading.clearing"
               >
+                <img 
+                  :src="clearIcon" 
+                  alt="清空" 
+                  style="width: 16px; height: 20px; margin-right: 6px; vertical-align: -3px;"
+                />
                 清空
               </n-button>
             </n-space>
@@ -156,20 +162,31 @@
               />
 
               <n-space justify="space-between" align="center">
-                <n-checkbox v-model:checked="useKnowledgeBase">
+                <n-space item-style="display: flex;">
+                  <n-switch
+                    v-model:value="useKnowledgeBase"
+                    :rail-style="switchRailStyle"
+                    :handle-style="switchHandleStyle"
+                  />
                   使用知识库
-                </n-checkbox>
+                </n-space>
 
                 <n-space :size="8">
                   <n-button
+                    round
                     v-if="!loading.streaming"
-                    type="primary"
                     @click="handleSend(true)"
                     :disabled="!canSend"
+                    color="#387BE9"
                   >
+                    <img
+                     :src="sendIcon"
+                      alt="发送"
+                      style="width: 20px; height: 20px; margin-right: 6px; vertical-align: -3px;">
                     发送
                   </n-button>
                   <n-button
+                    round
                     v-else
                     type="error"
                     @click="abortStream"
@@ -193,6 +210,8 @@ import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import { chatApi } from '@/api/api'
+import clearIcon from '@/assets/icon/cleared.png';
+import sendIcon from '@/assets/icon/send.png';
 
 const handleKeydown = (e) => {
   // 检查是否是 Enter 键
@@ -270,6 +289,28 @@ const inputAreaRef = ref(null)
 
 const streamingText = ref('')
 let streamCtrl = null
+
+// 知识库开关颜色设置
+// 自定义轨道样式
+function switchRailStyle({ checked, focused }) {
+  return {
+    background: checked ? '#387BE9' : '#bfbfbf',
+    ...(focused && {
+      boxShadow: `0 0 0 2px ${checked ? '#387BE940' : '#bfbfbf40'}`
+    })
+  }
+}
+
+// 自定义滑块（把手）样式
+function switchHandleStyle({ checked, focused }) {
+  return {
+    background: checked ? '#387BE9' : '#fff',
+    border: 'none', // 移除默认边框
+    ...(focused && {
+      boxShadow: '0 0 0 2px #387BE940'
+    })
+  }
+}
 
 // 重命名相关状态
 const renamingSessionId = ref('')
@@ -935,26 +976,6 @@ onMounted(async () => {
     opacity: 0.8;
   }
 }
-/* NaiveUI 按钮圆角样式 */
-:deep(.n-button) {
-  border-radius: 10px !important;
-}
-
-:deep(.n-button--primary-type) {
-  background-color: #1a73e8 !important;
-  border-color: #1a73e8 !important;
-}
-
-:deep(.n-button--primary-type:hover) {
-  background-color: #1557b0 !important;
-  border-color: #1557b0 !important;
-}
-
-:deep(.n-button--primary-type:focus) {
-  background-color: #1557b0 !important;
-  border-color: #1557b0 !important;
-}
-
 /* NaiveUI 输入框圆角样式 */
 :deep(.n-input) {
   border-radius: 12px !important;
@@ -971,47 +992,5 @@ onMounted(async () => {
 /* NaiveUI 卡片圆角样式 */
 :deep(.n-card) {
   border-radius: 12px !important;
-}
-
-/* NaiveUI 复选框样式 */
-:deep(.n-checkbox) {
-  border-radius: 6px !important;
-}
-
-:deep(.n-checkbox .n-checkbox-box) {
-  border-radius: 6px !important;
-}
-
-:deep(.n-checkbox .n-checkbox-box__border) {
-  border-radius: 6px !important;
-}
-
-/* NaiveUI 下拉菜单圆角样式 */
-:deep(.n-dropdown-menu) {
-  border-radius: 12px !important;
-}
-
-:deep(.n-dropdown-option) {
-  border-radius: 8px !important;
-}
-
-/* 滚动条样式 */
-.chat-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.chat-body::-webkit-scrollbar-track {
-  background: var(--n-scrollbar-track-color, #f5f5f5);
-  border-radius: 4px;
-}
-
-.chat-body::-webkit-scrollbar-thumb {
-  background: var(--n-scrollbar-color, #c0c0c0);
-  border-radius: 4px;
-  border: 1px solid var(--n-border-color, #e0e0e0);
-}
-
-.chat-body::-webkit-scrollbar-thumb:hover {
-  background: var(--n-scrollbar-color-hover, #a0a0a0);
 }
 </style>
