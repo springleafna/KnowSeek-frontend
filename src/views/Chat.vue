@@ -470,7 +470,7 @@ async function handleDeleteSession(id) {
 
 // 处理重命名会话
 async function handleRenameSession(sessionId) {
-  const session = sessions.value.find(s => s.id === sessionId)
+  const session = sessions.value.find(s => s.id == sessionId)
   if (!session) return
 
   const newName = prompt('请输入新的会话名称：', session.sessionName || '未命名会话')
@@ -478,7 +478,10 @@ async function handleRenameSession(sessionId) {
 
   try {
     // 调用重命名API
-    await chatApi.updateSession(sessionId, { sessionName: newName.trim() })
+    await chatApi.updateSession({
+      id: String(sessionId),
+      sessionName: newName.trim()
+    })
     // 重新加载会话列表
     await loadSessions()
   } catch (e) {
@@ -492,7 +495,9 @@ async function handleClearHistory() {
   loading.clearing = true
   try {
     // 后端未提供清空历史接口，这里仅清空本地消息展示
+    await chatApi.deleteSessionMessages(activeSessionId.value)
     messages.value = []
+    await loadSessionDetail(activeSessionId.value)
   } catch (e) {
     console.error('清空历史失败', e)
   } finally {

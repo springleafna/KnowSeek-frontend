@@ -18,7 +18,7 @@
         <table class="table">
           <thead>
             <tr>
-              <th>文件名</th>
+              <th style="width: 250px;">文件名</th>
               <th style="width: 120px;">大小</th>
               <th style="width: 120px;">类型</th>
               <th style="width: 180px;">上传时间</th>
@@ -30,7 +30,6 @@
             <tr v-for="file in files" :key="file.id">
               <td class="name-cell">
                 <div class="name">{{ file.name }}</div>
-                <div class="sub">MD5: {{ file.md5 || '-' }}</div>
               </td>
               <td>{{ formatSize(file.size) }}</td>
               <td>{{ file.type || '-' }}</td>
@@ -161,7 +160,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.kb-detail { height: 100%; padding: 16px 20px; box-sizing: border-box; }
+.kb-detail {   height: calc(100vh - 8vh); padding: 16px 20px; box-sizing: border-box; }
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .title-wrap { display: flex; align-items: center; gap: 10px; }
 .title { margin: 0; font-size: 18px; }

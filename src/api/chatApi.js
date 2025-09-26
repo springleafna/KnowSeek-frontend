@@ -129,6 +129,11 @@ export const chatApi = {
   deleteSession(sessionId) {
     return http.delete(`/chat/deleteSession/${encodeURIComponent(sessionId)}`);
   },
+
+  // 删除会话消息：DELETE /chat/deleteMessages/{sessionId}
+  deleteSessionMessages(sessionId) {
+    return http.delete(`/chat/deleteMessages/${encodeURIComponent(sessionId)}`);
+  },
 };
 
 export default chatApi;
