@@ -7,25 +7,27 @@
         :collapsed-width="0"
         :width="300"
         show-trigger
-        content-style="padding: 16px; display: flex; flex-direction: column;"
+        content-style="padding: 0; display: flex; flex-direction: column;"
       >
-        <n-space vertical :size="16" style="flex: 1; min-height: 0;">
-          <n-space justify="space-between" align="center">
-            <n-h3 :depth="3" style="margin: 0;">会话</n-h3>
-            <n-button
-              round
-              size="small"
-              @click="handleCreateSession"
-              :loading="loading.sessions"
-              color="#387BE9"
-            >
-              新建
-            </n-button>
-          </n-space>
-          
-          <n-scrollbar style="flex: 1;">
+        <div style="padding: 16px; display: flex; flex-direction: column; height: 100%;">
+          <div style="flex-shrink: 0; margin-bottom: 16px;">
+            <n-space justify="space-between" align="center">
+              <n-h3 :depth="3" style="margin: 0;">会话</n-h3>
+              <n-button
+                round
+                size="small"
+                @click="handleCreateSession"
+                :loading="loading.sessions"
+                color="#387BE9"
+              >
+                新建
+              </n-button>
+            </n-space>
+          </div>
+
+          <div class="session-list-wrapper">
             <n-spin :show="loading.sessions">
-              <n-space vertical :size="8" v-if="!loading.sessions">
+              <div v-if="!loading.sessions" class="session-cards">
                 <n-card
                   v-for="item in sessions"
                   :key="item.id"
@@ -33,7 +35,7 @@
                   hoverable
                   :class="{ 'active-conversation': item.id === activeSessionId }"
                   @click="selectSession(item.id)"
-                  style="cursor: pointer;"
+                  style="cursor: pointer; margin-bottom: 8px;"
                 >
                   <template #header>
                     <n-ellipsis>{{ item.sessionName || '未命名会话' }}</n-ellipsis>
@@ -64,12 +66,12 @@
                     {{ formatTime(item.updatedAt || item.createdAt) }}
                   </n-text>
                 </n-card>
-                
+
                 <n-empty v-if="sessions.length === 0" description="暂无会话，发送消息将自动创建" />
-              </n-space>
+              </div>
             </n-spin>
-          </n-scrollbar>
-        </n-space>
+          </div>
+        </div>
       </n-layout-sider>
 
       <n-layout content-style="display: flex; flex-direction: column; height: 100%; position: relative;">
@@ -699,7 +701,7 @@ onMounted(async () => {
 
 <style scoped>
 .chat-layout {
-  height: calc(100vh - 8vh); /* 减去浏览器UI空间 */
+  height: calc(100vh - 8vh);
   box-sizing: border-box;
 }
 
@@ -802,7 +804,6 @@ onMounted(async () => {
 }
 
 .markdown-content {
-  margin-left: 20px;
   line-height: 1.7;
   font-size: 15px;
   color: var(--n-text-color);
@@ -897,16 +898,29 @@ onMounted(async () => {
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
-.markdown-content ul,
-.markdown-content ol {
-  padding-left: 24px;
-  margin: 12px 0;
-  line-height: 1.6;
+/* 最强力的列表缩进设置 */
+:deep(.markdown-content ul),
+:deep(.markdown-content ol) {
+  margin-left: 40px !important;
+  padding-left: 20px !important;
+  margin-top: 12px !important;
+  margin-bottom: 12px !important;
+  line-height: 1.6 !important;
+  text-indent: 0 !important;
+  list-style-position: outside !important;
 }
 
-.markdown-content li {
-  margin: 6px 0;
-  line-height: 1.6;
+:deep(.message-card.assistant .markdown-content ul),
+:deep(.message-card.assistant .markdown-content ol) {
+  margin-left: 40px !important;
+  padding-left: 20px !important;
+}
+
+:deep(.markdown-content li) {
+  margin: 6px 0 !important;
+  line-height: 1.6 !important;
+  position: relative !important;
+  text-indent: 0 !important;
 }
 
 .markdown-content table {
@@ -992,5 +1006,25 @@ onMounted(async () => {
 /* NaiveUI 卡片圆角样式 */
 :deep(.n-card) {
   border-radius: 12px !important;
+}
+
+/* 隐藏会话列表滚动条 - 最终方案 */
+.session-list-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* Internet Explorer 10+ */
+}
+
+.session-list-wrapper::-webkit-scrollbar {
+  display: none !important; /* WebKit */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.session-cards {
+  padding-right: 2px; /* 防止内容贴边 */
 }
 </style>
