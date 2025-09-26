@@ -503,12 +503,19 @@ function handleCreateSession() {
 
 async function handleDeleteSession(id) {
   try {
+    // 记录是否删除的是当前会话
+    const isDeletingCurrentSession = (id == activeSessionId.value)
+
     await chatApi.deleteSession(id)
-    if (id === activeSessionId.value) {
-      activeSessionId.value = ''
-      messages.value = []
-    }
+
+    // 重新加载会话列表
     await loadSessions()
+
+    // 如果删除的是当前会话，直接跳转到新会话页面
+    if (isDeletingCurrentSession) {
+      // 调用新建会话函数，直接跳转到新会话状态
+      handleCreateSession()
+    }
   } catch (e) {
     console.error('删除会话失败', e)
   }
