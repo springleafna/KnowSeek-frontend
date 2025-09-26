@@ -207,6 +207,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick, h } from 'vue'
+import { useDialog } from 'naive-ui'
 import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
@@ -214,6 +215,8 @@ import 'highlight.js/styles/github.css'
 import { chatApi } from '@/api/api'
 import clearIcon from '@/assets/icon/cleared.png';
 import sendIcon from '@/assets/icon/send.png';
+
+const dialog = useDialog()
 
 const handleKeydown = (e) => {
   // 检查是否是 Enter 键
@@ -516,21 +519,46 @@ async function handleRenameSession(sessionId) {
   const session = sessions.value.find(s => s.id == sessionId)
   if (!session) return
 
-  const newName = prompt('请输入新的会话名称：', session.sessionName || '未命名会话')
-  if (!newName || !newName.trim()) return
+  dialog.create({
+    title: '重命名会话',
+    content: () => {
+      return h('div', { style: 'padding: 16px 0;' }, [
+        h('div', { style: 'margin-bottom: 12px; color: #6b7280;' }, '请输入新的会话名称：'),
+        h('input', {
+          id: 'session-name-input',
+          type: 'text',
+          value: session.sessionName || '未命名会话',
+          style: 'width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;',
+          onFocus: (e) => e.target.select()
+        })
+      ])
+    },
+    positiveText: '确认',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const input = document.getElementById('session-name-input')
+      const newName = input?.value?.trim()
 
-  try {
-    // 调用重命名API
-    await chatApi.updateSession({
-      id: String(sessionId),
-      sessionName: newName.trim()
-    })
-    // 重新加载会话列表
-    await loadSessions()
-  } catch (e) {
-    console.error('重命名会话失败', e)
-    alert('重命名失败，请重试')
-  }
+      if (!newName) {
+        return false // 阻止关闭弹窗
+      }
+
+      try {
+        // 调用重命名API
+        await chatApi.updateSession({
+          id: String(sessionId),
+          sessionName: newName
+        })
+        // 重新加载会话列表
+        await loadSessions()
+        return true // 允许关闭弹窗
+      } catch (e) {
+        console.error('重命名会话失败', e)
+        // 这里可以显示错误提示
+        return false // 阻止关闭弹窗
+      }
+    }
+  })
 }
 
 async function handleClearHistory() {

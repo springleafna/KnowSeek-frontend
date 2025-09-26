@@ -4,12 +4,14 @@ import AppHeader from '@/components/AppHeader.vue'
 
 <template>
   <n-message-provider>
-    <n-layout style="height: 100vh;">
-      <AppHeader />
-      <n-layout-content embedded style="padding: 0;">
-        <router-view />
-      </n-layout-content>
-    </n-layout>
+    <n-dialog-provider>
+      <n-layout style="height: 100vh;">
+        <AppHeader />
+        <n-layout-content embedded style="padding: 0;">
+          <router-view />
+        </n-layout-content>
+      </n-layout>
+    </n-dialog-provider>
   </n-message-provider>
 </template>
 
