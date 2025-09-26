@@ -793,16 +793,6 @@ onMounted(async () => {
   border-radius: 12px;
 }
 
-.chat-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 16px;
-  padding-bottom: 20px; /* 增加底部内边距，避免与固定输入框重叠 */
-  background: #f7f8fa;
-  min-height: 0;
-}
-
 .markdown-content {
   line-height: 1.7;
   font-size: 15px;
@@ -898,7 +888,7 @@ onMounted(async () => {
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
-/* 最强力的列表缩进设置 */
+/* 列表缩进设置 */
 :deep(.markdown-content ul),
 :deep(.markdown-content ol) {
   margin-left: 40px !important;
@@ -908,12 +898,6 @@ onMounted(async () => {
   line-height: 1.6 !important;
   text-indent: 0 !important;
   list-style-position: outside !important;
-}
-
-:deep(.message-card.assistant .markdown-content ul),
-:deep(.message-card.assistant .markdown-content ol) {
-  margin-left: 40px !important;
-  padding-left: 20px !important;
 }
 
 :deep(.markdown-content li) {

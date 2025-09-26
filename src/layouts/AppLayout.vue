@@ -2,11 +2,26 @@
   <div class="app-layout">
     <aside class="app-sidebar">
       <nav class="menu">
-        <router-link to="/chat" class="menu-item" active-class="active">AI对话</router-link>
-        <router-link to="/knowledge" class="menu-item" active-class="active">知识库</router-link>
-        <router-link to="/file" class="menu-item" active-class="active">文件列表</router-link>
-        <router-link to="/organization" class="menu-item" active-class="active">组织管理</router-link>
-        <router-link to="/users" class="menu-item" active-class="active">用户管理</router-link>
+        <router-link to="/chat" class="menu-item" active-class="active">
+          <img src="@/assets/icon/chat.png" alt="AI对话" class="menu-icon">
+          AI对话
+        </router-link>
+        <router-link to="/knowledge" class="menu-item" active-class="active">
+          <img src="@/assets/icon/knowledgeBase.png" alt="知识库" class="menu-icon">
+          知识库
+        </router-link>
+        <router-link to="/file" class="menu-item" active-class="active">
+          <img src="@/assets/icon/fileList.png" alt="文件列表" class="menu-icon">
+          文件列表
+        </router-link>
+        <router-link to="/organization" class="menu-item" active-class="active">
+          <img src="@/assets/icon/organization.png" alt="组织管理" class="menu-icon">
+          组织管理
+        </router-link>
+        <router-link to="/users" class="menu-item" active-class="active">
+          <img src="@/assets/icon/user.png" alt="用户管理" class="menu-icon">
+          用户管理
+        </router-link>
       </nav>
     </aside>
     <div class="content">
@@ -67,7 +82,14 @@
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.menu-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .menu-item:hover {
