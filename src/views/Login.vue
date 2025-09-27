@@ -1,48 +1,90 @@
 <template>
   <div class="login-container">
-    <n-card class="login-card" :bordered="false">
-      <n-h2>登录</n-h2>
-      <n-form 
-        ref="formRef" 
-        :model="model" 
-        :rules="rules" 
-        size="large"
-      >
-        <n-form-item label="用户名" path="username">
-          <n-input 
-            v-model:value="model.username" 
-            placeholder="请输入用户名"
-            :disabled="loading"
-          />
-        </n-form-item>
-        <n-form-item label="密码" path="password">
-          <n-input 
-            v-model:value="model.password" 
-            type="password" 
-            placeholder="请输入密码"
-            :disabled="loading"
-            show-password-on="mousedown"
-          />
-        </n-form-item>
-        <n-form-item>
-          <n-button 
-            type="primary" 
-            block 
-            size="large"
-            :loading="loading"
-            @click="handleLogin"
-          >
-            登录
-          </n-button>
-        </n-form-item>
-      </n-form>
-      <n-text depth="3">
-        还没有账号？ 
-        <router-link to="/register">
-          <n-text type="primary">注册</n-text>
-        </router-link>
-      </n-text>
-    </n-card>
+    <div class="left-side">
+      <div class="logo-section-left">
+        <img src="@/assets/icon/knowseek.png" alt="KnowSeek" class="logo-left" />
+      </div>
+      <div class="robots-section">
+        <img src="@/assets/icon/startup.png" alt="Startup" class="startup-image" />
+      </div>
+      <div class="bottom-text">
+        <h3>知析</h3>
+        <p>「检索即生成，问答见真知」</p>
+      </div>
+    </div>
+
+    <div class="right-side">
+      <div class="login-card">
+        <!-- Welcome text -->
+        <div class="welcome-section">
+          <h2>欢迎回来</h2>
+          <p>请输入您的账号信息登录系统</p>
+        </div>
+
+        <n-form
+          ref="formRef"
+          :model="model"
+          :rules="rules"
+          size="large"
+          class="login-form"
+        >
+          <div class="form-group">
+            <label>用户名</label>
+            <div class="input-wrapper">
+              <img src="@/assets/icon/username.png" alt="username" class="input-icon" />
+              <n-input
+                v-model:value="model.username"
+                placeholder="请输入用户名"
+                :disabled="loading"
+                :bordered="false"
+                class="custom-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>密码</label>
+            <div class="input-wrapper">
+              <img src="@/assets/icon/password.png" alt="password" class="input-icon" />
+              <n-input
+                v-model:value="model.password"
+                type="password"
+                placeholder="请输入密码"
+                :disabled="loading"
+                show-password-on="mousedown"
+                :bordered="false"
+                class="custom-input"
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="remember-forgot">
+              <n-checkbox>记住我</n-checkbox>
+              <a href="#" class="forgot-password">忘记密码?</a>
+            </div>
+
+            <n-button
+              type="primary"
+              block
+              size="large"
+              :loading="loading"
+              @click="handleLogin"
+              class="login-button"
+            >
+              登录
+            </n-button>
+          </div>
+        </n-form>
+
+        <div class="register-section">
+          <span>还没有账号？</span>
+          <router-link to="/register" class="register-link">
+            注册新账号
+          </router-link>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -111,20 +153,232 @@ const handleLogin = async () => {
 <style scoped>
 .login-container {
   display: flex;
-  justify-content: center;
+  min-height: 92vh;
+}
+
+.left-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem 2rem 2rem 4rem;
+  color: #1f2937;
+  position: relative;
+  background: linear-gradient(135deg, #FFFFFF 0%, #E8F0FE 100%);
+}
+
+.logo-section-left {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.logo-left {
+  height: 60px;
+  width: auto;
+}
+
+.robots-section {
+  flex: 1;
+  display: flex;
   align-items: center;
-  min-height: calc(100vh - 64px);
+  justify-content: center;
+}
+
+.startup-image {
+  max-width: 500px;
+  max-height: 400px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-text {
+  text-align: left;
+}
+
+.bottom-text h3 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.bottom-text p {
+  font-size: 1rem;
+  opacity: 0.8;
+  margin: 0;
+  color: #6b7280;
+}
+
+.right-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
 }
 
-a {
+.welcome-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome-section h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.welcome-section p {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.login-form {
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: #333;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0 12px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.1);
+}
+
+.input-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  opacity: 0.6;
+}
+
+.custom-input {
+  flex: 1;
+  background: transparent !important;
+}
+
+.custom-input :deep(.n-input__input-el) {
+  background: transparent !important;
+  border: none !important;
+  padding: 12px 0 !important;
+  font-size: 0.95rem;
+}
+
+.form-actions {
+  margin-top: 1.5rem;
+}
+
+.remember-forgot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.forgot-password {
+  color: #4285f4;
   text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: #3367d6;
+}
+
+.login-button {
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: #4285f4 !important;
+  border: none !important;
+  transition: all 0.3s ease;
+}
+
+.login-button:hover {
+  background: #3367d6 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.register-section {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.register-link {
+  color: #4285f4;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.register-link:hover {
+  color: #3367d6;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .left-side {
+    min-height: 200px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .startup-image {
+    max-width: 250px;
+    max-height: 150px;
+  }
+
+  .bottom-text h3 {
+    font-size: 1.5rem;
+  }
+
+  .right-side {
+    background: white;
+  }
+
+  .login-card {
+    padding: 1.5rem;
+  }
 }
 </style>
