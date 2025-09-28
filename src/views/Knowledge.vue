@@ -28,21 +28,6 @@
         clearable
       />
 
-      <n-button-group>
-        <n-button round :type="viewMode === 'grid' ? 'primary' : 'default'" quaternary @click="setViewMode('grid')">
-          <n-icon size="16" style="margin-right: 6px">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 3H3v7h7V3m11 0h-7v7h7V3M10 14H3v7h7v-7m11 0h-7v7h7v-7Z"/></svg>
-          </n-icon>
-          网格
-        </n-button>
-        <n-button round :type="viewMode === 'list' ? 'primary' : 'default'" quaternary @click="setViewMode('list')">
-          <n-icon size="16" style="margin-right: 6px">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 5h18v2H3V5m0 6h18v2H3v-2m0 6h18v2H3v-2Z"/></svg>
-          </n-icon>
-          列表
-        </n-button>
-      </n-button-group>
-
       <n-button round color="#387BE9" @click="openCreate">
         新增
       </n-button>
@@ -56,7 +41,7 @@
     </div>
 
     <div v-if="filteredItems.length > 0">
-      <n-grid v-if="viewMode === 'grid'" cols="1 s:2 l:3" x-gap="24" y-gap="24" responsive="screen">
+      <n-grid cols="1 s:2 l:3" x-gap="24" y-gap="24" responsive="screen">
         <n-grid-item v-for="item in filteredItems" :key="item.id">
           <n-card :segmented="{ content: true, footer: true }" class="kb-card kb-card--hover" @click="onView(item)" style="cursor: pointer;">
             <template #header>
@@ -109,54 +94,6 @@
           </n-card>
         </n-grid-item>
       </n-grid>
-
-      <div v-else class="kb-list">
-        <n-card v-for="item in filteredItems" :key="item.id" :segmented="{ content: true, footer: true }" class="kb-card-list kb-card kb-card--hover" @click="onView(item)" style="cursor: pointer;">
-          <template #header>
-            <div class="kb-list-header">
-              <div>
-                <div class="kb-card-title">
-                  {{ item.title }}
-                  <n-tag v-if="authStore.userInfo?.primaryKbId === item.id" size="small" type="success" round style="margin-left: 8px">
-                    默认
-                  </n-tag>
-                </div>
-                <div class="kb-card-desc">{{ item.description || '暂无描述' }}</div>
-              </div>
-              <n-tag size="small" type="default" round>{{ item.category || '未分类' }}</n-tag>
-            </div>
-          </template>
-          <div class="kb-tags" v-if="item.tags && item.tags.length">
-            <n-space :size="6" wrap>
-              <n-tag v-for="t in item.tags" :key="t" size="small" bordered round>
-                {{ t }}
-              </n-tag>
-            </n-space>
-          </div>
-          <div class="kb-card-meta">
-            <div class="kb-meta-row">
-              <span>创建时间: {{ item.lastUpdated }}</span>
-            </div>
-          </div>
-          <template #footer>
-            <n-space justify="space-between">
-              <n-space>
-                <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
-                <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
-              </n-space>
-              <n-button
-                v-if="authStore.userInfo?.primaryKbId !== item.id"
-                size="small"
-                type="primary"
-                quaternary
-                @click.stop="setPrimary(item)"
-              >
-                设为默认
-              </n-button>
-            </n-space>
-          </template>
-        </n-card>
-      </div>
     </div>
 
     <div v-else class="kb-empty">
@@ -200,7 +137,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const searchTerm = ref('');
-const viewMode = ref('grid'); // 'grid' | 'list'
 const selectedCategory = ref('全部');
 
 const rawItems = ref([]);
@@ -247,10 +183,6 @@ const filteredItems = computed(() => {
     return matchesSearch && matchesCategory;
   });
 });
-
-function setViewMode(mode) {
-  viewMode.value = mode;
-}
 
 function onView(item) {
   router.push({ name: 'KnowledgeDetail', params: { id: item.id } });
