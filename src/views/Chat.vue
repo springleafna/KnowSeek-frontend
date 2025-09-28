@@ -215,6 +215,9 @@ import 'highlight.js/styles/github.css'
 import { chatApi } from '@/api/api'
 import clearIcon from '@/assets/icon/cleared.png';
 import sendIcon from '@/assets/icon/send.png';
+import { useMessage } from 'naive-ui'
+
+const message = useMessage()
 
 const dialog = useDialog()
 
@@ -700,8 +703,7 @@ async function handleCodeCopy(event) {
     const code = target.textContent
     try {
       await navigator.clipboard.writeText(code)
-      // 这里可以显示复制成功的提示
-      console.log('代码已复制到剪贴板')
+      message.success('代码已复制到剪贴板')
     } catch (error) {
       console.error('复制失败:', error)
       // 降级到旧方法
@@ -718,7 +720,7 @@ function fallbackCopy(text) {
   textarea.select()
   try {
     document.execCommand('copy')
-    console.log('代码已复制到剪贴板')
+    message.success('代码已复制到剪贴板')
   } catch (error) {
     console.error('复制失败:', error)
   } finally {

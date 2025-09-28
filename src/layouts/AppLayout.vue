@@ -83,6 +83,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
 }
 
 .menu-icon {

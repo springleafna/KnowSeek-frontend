@@ -6,7 +6,6 @@
       <p class="kb-subtitle">探索我们的知识资源，提升您的技能和知识水平</p>
     </div>
 
-    <!-- Search & Controls -->
     <n-space class="kb-controls" wrap align="center">
       <n-input
         v-model:value="searchTerm"
@@ -30,13 +29,13 @@
       />
 
       <n-button-group>
-        <n-button :type="viewMode === 'grid' ? 'primary' : 'default'" quaternary @click="setViewMode('grid')">
+        <n-button round :type="viewMode === 'grid' ? 'primary' : 'default'" quaternary @click="setViewMode('grid')">
           <n-icon size="16" style="margin-right: 6px">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 3H3v7h7V3m11 0h-7v7h7V3M10 14H3v7h7v-7m11 0h-7v7h7v-7Z"/></svg>
           </n-icon>
           网格
         </n-button>
-        <n-button :type="viewMode === 'list' ? 'primary' : 'default'" quaternary @click="setViewMode('list')">
+        <n-button round :type="viewMode === 'list' ? 'primary' : 'default'" quaternary @click="setViewMode('list')">
           <n-icon size="16" style="margin-right: 6px">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 5h18v2H3V5m0 6h18v2H3v-2m0 6h18v2H3v-2Z"/></svg>
           </n-icon>
@@ -44,10 +43,11 @@
         </n-button>
       </n-button-group>
 
-      <n-button type="primary" @click="openCreate">新增</n-button>
+      <n-button round color="#387BE9" @click="openCreate">
+        新增
+      </n-button>
     </n-space>
 
-    <!-- Result count -->
     <div class="kb-count">
       找到 {{ filteredItems.length }} 个结果
       <template v-if="selectedCategory && selectedCategory !== '全部'">
@@ -55,7 +55,6 @@
       </template>
     </div>
 
-    <!-- Content -->
     <div v-if="filteredItems.length > 0">
       <n-grid v-if="viewMode === 'grid'" cols="1 s:2 l:3" x-gap="24" y-gap="24" responsive="screen">
         <n-grid-item v-for="item in filteredItems" :key="item.id">
@@ -63,9 +62,6 @@
             <template #header>
               <div class="kb-card-header">
                 <div class="kb-type">
-                  <n-tag size="small" type="info" round>
-                    {{ item.typeLabel }}
-                  </n-tag>
                   <n-tag v-if="authStore.userInfo?.primaryKbId === item.id" size="small" type="success" round>
                     默认
                   </n-tag>
@@ -94,15 +90,17 @@
             <template #footer>
               <n-space justify="space-between">
                 <n-space>
-                  <n-button size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
-                  <n-button size="small" @click.stop="onEdit(item)">编辑</n-button>
+                  <n-button round color="#387BE9" size="small" type="primary" secondary @click.stop="onView(item)">查看</n-button>
+                  <n-button round color="#387BE9" size="small" @click.stop="onEdit(item)">编辑</n-button>
                 </n-space>
                 <n-button
+                round
                   v-if="authStore.userInfo?.primaryKbId !== item.id"
                   size="small"
                   type="primary"
                   quaternary
                   @click.stop="setPrimary(item)"
+                  color="#000000"
                 >
                   设为默认
                 </n-button>
@@ -161,7 +159,6 @@
       </div>
     </div>
 
-    <!-- Empty state -->
     <div v-else class="kb-empty">
       <n-empty description="未找到相关内容">
         <template #extra>
@@ -170,7 +167,6 @@
       </n-empty>
     </div>
 
-    <!-- Create / Edit Modal -->
     <n-modal v-model:show="showEditModal" :title="isEdit ? '编辑知识库' : '新增知识库'" preset="dialog">
       <n-form ref="formRef" :model="formModel" :rules="formRules" label-placement="left" label-width="80">
         <n-form-item label="名称" path="name">
@@ -228,7 +224,6 @@ function normalize(vo) {
     title: vo.name,
     description: vo.description,
     category: vo.category || '未分类',
-    typeLabel: '文档',
     lastUpdated: formatDateTime(vo.createdAt),
     tags: vo.tags || [],
   };
@@ -384,7 +379,7 @@ onMounted(fetchList);
 .kb-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 20px;
 }
 .kb-card--hover {
   transition: box-shadow .2s ease;
