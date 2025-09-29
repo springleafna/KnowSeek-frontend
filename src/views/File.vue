@@ -238,7 +238,7 @@ onMounted(() => {
 <style scoped>
 /* 容器和头部样式 (基本不变) */
 .file-list-container {
-  padding: 14px;
+  padding: 22px;
   background-color: #f7f8fa;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   height: calc(100vh - 8vh);
@@ -250,7 +250,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 .header h1 {
@@ -304,8 +304,8 @@ onMounted(() => {
   background-color: #f9f9f9;
 }
 .refresh-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .table-container {
@@ -397,6 +397,7 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .status-badge {
