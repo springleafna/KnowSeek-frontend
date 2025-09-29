@@ -1,243 +1,475 @@
 <template>
-    <div class="file-page">
-      <div class="header">
-        <h2>文件列表</h2>
-        <div class="tools">
-          <button class="btn" @click="showUploadModal = true">+ 新增</button>
-          <input v-model="keyword" type="text" placeholder="搜索文件名..." @keyup.enter="loadFiles" />
-          <button class="btn" @click="loadFiles">刷新</button>
+  <div class="file-list-container">
+    <!-- 头部区域 -->
+    <div class="header">
+      <h1>文件列表</h1>
+      <div class="header-right">
+        <!-- 文件名搜索框 -->
+        <div class="search-box">
+          <img :src="searchIcon" alt="search" class="search-icon" />
+          <input 
+            type="text" 
+            placeholder="搜索文件名..." 
+            v-model="queryParams.fileName"
+            @keyup.enter="handleSearch"
+          />
         </div>
-      </div>
-  
-      <div class="card">
-        <div class="table-wrap" v-if="files.length > 0">
-          <table class="table">
-            <thead>
-              <tr>
-                <th style="width: 36px;"><input type="checkbox" v-model="checkedAll" @change="toggleAll" /></th>
-                <th>文件名</th>
-                <th style="width: 120px;">大小</th>
-                <th style="width: 120px;">类型</th>
-                <th style="width: 180px;">上传时间</th>
-                <th style="width: 160px;">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="file in files" :key="file.id">
-                <td><input type="checkbox" v-model="selectedIds" :value="file.id" /></td>
-                <td class="name-cell">
-                  <div class="name">{{ file.name }}</div>
-                  <div class="sub">MD5: {{ file.md5 || '-' }}</div>
-                </td>
-                <td>{{ formatSize(file.size) }}</td>
-                <td>{{ file.type || '-' }}</td>
-                <td>{{ formatTime(file.uploadTime) }}</td>
-                <td>
-                  <button class="link" @click="handleDownload(file)">下载</button>
-                  <button class="link danger" @click="handleDelete(file)">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- 知识库搜索框 -->
+        <div class="search-box">
+          <img :src="searchIcon" alt="search" class="search-icon" />
+          <input 
+            type="text" 
+            placeholder="搜索知识库..." 
+            v-model="queryParams.kbName"
+            @keyup.enter="handleSearch"
+          />
         </div>
-  
-        <div v-else class="empty">暂无文件</div>
+        <button class="refresh-btn" @click="fetchFileList">
+          <img :src="refreshIcon" alt="refresh" class="refresh-icon" />
+          <span>刷新</span>
+        </button>
       </div>
-  
-      <!-- 文件上传弹窗 -->
-      <FileUploadModal 
-        v-model:show="showUploadModal"
-        @uploaded="handleFileUploaded"
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="table-container">
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th @click="handleSortChange('fileName')">
+              文件名
+              <span class="sort-icon">▲▼</span>
+            </th>
+            <th @click="handleSortChange('knowledgeBaseName')">
+              知识库
+              <span class="sort-icon">▲▼</span>
+            </th>
+            <th @click="handleSortChange('totalSize')">
+              大小
+              <span class="sort-icon">▲▼</span>
+            </th>
+            <th @click="handleSortChange('type')">
+              类型
+              <span class="sort-icon">▲▼</span>
+            </th>
+            <th @click="handleSortChange('createdAt')">
+              上传时间
+              <span class="sort-icon">▲▼</span>
+            </th>
+            <th @click="handleSortChange('status')">
+              状态
+              <span class="sort-icon">▲▼</span>
+            </th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="!loading && fileList.length === 0">
+            <td colspan="7" class="empty-cell">暂无文件</td>
+          </tr>
+          <tr v-for="file in fileList" :key="file.id">
+            <td>
+              <div class="file-name-cell">
+                <img :src="getFileIcon(file.fileName)" alt="file-icon" class="file-icon" />
+                <span class="file-name-text">{{ file.fileName }}</span>
+              </div>
+            </td>
+            <td>{{ file.knowledgeBaseName }}</td>
+            <td>{{ file.totalSize }}</td>
+            <td>{{ file.type }}</td>
+            <td>{{ formatDateTime(file.createdAt) }}</td>
+            <td>
+              <span :class="['status-badge', getStatusClass(file.status)]">
+                {{ file.status }}
+              </span>
+            </td>
+            <td>
+              <div class="action-icons">
+                <img :src="previewIcon" alt="preview" title="预览（暂未实现）" />
+                <img :src="downloadIcon" alt="download" title="下载（暂未实现）" />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 底部和分页 -->
+    <div class="footer">
+      <div class="footer-info">{{ paginationInfoText }}</div>
+      <n-pagination
+        :item-count="pagination.total"
+        v-model:page="pagination.pageNum"
+        v-model:page-size="pagination.pageSize"
+        :page-sizes="[5, 10, 20, 50]"
+        show-size-picker
+        @update:page="handlePageUpdate"
+        @update:page-size="handlePageSizeUpdate"
       />
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, onMounted, computed } from 'vue'
-  import FileUploadModal from '@/components/FileUploadModal.vue'
-  
-  const keyword = ref('')
-  const files = ref([])
-  const selectedIds = ref([])
-  const showUploadModal = ref(false)
-  const checkedAll = computed({
-    get() {
-      return files.value.length > 0 && selectedIds.value.length === files.value.length
-    },
-    set(val) {
-      if (val) selectedIds.value = files.value.map(f => f.id)
-      else selectedIds.value = []
-    }
-  })
-  
-  function toggleAll() {
-    checkedAll.value = !checkedAll.value
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { fileApi } from '@/api/fileApi';
+import { NPagination, useMessage } from 'naive-ui';
+
+// --- 静态资源导入 ---
+import searchIcon from '@/assets/file/search.png';
+import refreshIcon from '@/assets/file/refresh.png';
+import pdfIcon from '@/assets/file/pdf.png';
+import xlsxIcon from '@/assets/file/xlsx.png';
+import docxIcon from '@/assets/file/docx.png';
+import pptxIcon from '@/assets/file/pptx.png';
+import jpgIcon from '@/assets/file/jpg.png';
+import previewIcon from '@/assets/file/preview-true.png';
+import downloadIcon from '@/assets/file/download-true.png';
+import defaultIcon from '@/assets/file/jpg.png';
+
+// --- 初始化 ---
+const message = useMessage();
+
+// --- 响应式状态定义 ---
+const fileList = ref([]);
+const loading = ref(false);
+
+const pagination = ref({
+  pageNum: 1,
+  pageSize: 10, // 默认每页10条
+  total: 0,
+});
+
+const queryParams = ref({
+  fileName: '',
+  kbName: '',
+  sortBy: 'createdAt',
+  sortOrder: 'desc'
+});
+
+// --- 计算属性 ---
+const paginationInfoText = computed(() => {
+  if (pagination.value.total === 0) return '共 0 条';
+  const start = (pagination.value.pageNum - 1) * pagination.value.pageSize + 1;
+  const end = Math.min(start + pagination.value.pageSize - 1, pagination.value.total);
+  return `显示 ${start} 到 ${end} 条，共 ${pagination.value.total} 条`;
+});
+
+// --- 方法定义 ---
+
+async function fetchFileList() {
+  loading.value = true;
+  try {
+    const params = { ...pagination.value, ...queryParams.value };
+    const responseData = await fileApi.getFileList(params);
+    fileList.value = responseData.list;
+    pagination.value.total = responseData.total;
+  } catch (error) {
+    console.error("请求文件列表时发生异常:", error);
+    fileList.value = [];
+    pagination.value.total = 0;
+    message.error("获取文件列表失败，请稍后重试");
+  } finally {
+    loading.value = false;
   }
-  
-  function formatSize(size) {
-    if (!size && size !== 0) return '-'
-    const units = ['B','KB','MB','GB','TB']
-    let idx = 0
-    let s = size
-    while (s >= 1024 && idx < units.length - 1) {
-      s /= 1024
-      idx++
-    }
-    return `${s.toFixed(idx === 0 ? 0 : 1)} ${units[idx]}`
+}
+
+function handleSearch() {
+  pagination.value.pageNum = 1;
+  fetchFileList();
+}
+
+function handleSortChange(column) {
+  if (queryParams.value.sortBy === column) {
+    queryParams.value.sortOrder = queryParams.value.sortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    queryParams.value.sortBy = column;
+    queryParams.value.sortOrder = 'desc';
   }
-  
-  function formatTime(t) {
-    if (!t) return '-'
-    try {
-      const d = typeof t === 'string' ? new Date(t) : t
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      const hh = String(d.getHours()).padStart(2, '0')
-      const mm = String(d.getMinutes()).padStart(2, '0')
-      const ss = String(d.getSeconds()).padStart(2, '0')
-      return `${y}-${m}-${day} ${hh}:${mm}:${ss}`
-    } catch {
-      return '-'
-    }
+  fetchFileList();
+}
+
+// Naive UI 分页事件处理
+function handlePageUpdate(newPage) {
+  pagination.value.pageNum = newPage;
+  fetchFileList();
+}
+
+function handlePageSizeUpdate(newPageSize) {
+  pagination.value.pageSize = newPageSize;
+  pagination.value.pageNum = 1; // 切换每页数量时，回到第一页
+  fetchFileList();
+}
+
+function getFileIcon(fileName) {
+  if (!fileName) return defaultIcon;
+  const extension = fileName.split('.').pop().toLowerCase();
+  switch (extension) {
+    case 'pdf': return pdfIcon;
+    case 'xlsx': return xlsxIcon;
+    case 'docx': return docxIcon;
+    case 'pptx': return pptxIcon;
+    case 'jpg': case 'jpeg': case 'png': return jpgIcon;
+    default: return defaultIcon;
   }
-  
-  async function loadFiles() {
-    // 这里预留与后端对接，当前使用占位数据
-    const mock = [
-      { id: '1', name: '产品白皮书.pdf', size: 1048576, type: 'pdf', uploadTime: new Date(), md5: 'abcd1234' },
-      { id: '2', name: '文件导入模板.xlsx', size: 348160, type: 'xlsx', uploadTime: new Date(Date.now() - 86400000) },
-    ]
-    files.value = mock.filter(f => !keyword.value || f.name.includes(keyword.value))
-    selectedIds.value = []
+}
+
+function getStatusClass(status) {
+    if (status === '处理中') return 'status-processing';
+    if (status === '上传完成' || status === '处理完成') return 'status-uploaded';
+    return 'status-default';
+}
+
+function formatDateTime(dateTimeStr) {
+  if (!dateTimeStr) return '-';
+  try {
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' ');
+  } catch {
+    return dateTimeStr;
   }
-  
-  function handleDownload(file) {
-    // 预留下载逻辑
-    console.log('download', file)
-  }
-  
-  function handleDelete(file) {
-    // 预留删除逻辑
-    files.value = files.value.filter(f => f.id !== file.id)
-    selectedIds.value = selectedIds.value.filter(id => id !== file.id)
-  }
-  
-  function handleFileUploaded() {
-    // 文件上传完成后重新加载文件列表
-    loadFiles()
-  }
-  
-  onMounted(loadFiles)
-  </script>
-  
-  <style scoped>
-  .file-page {
-    height: calc(100vh - 8vh);
-    padding: 16px 20px;
-    box-sizing: border-box;
-  }
-  
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  
-  .header h2 {
-    margin: 0;
-    font-size: 18px;
-  }
-  
-  .tools {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  
-  .tools input {
-    height: 36px;
-    padding: 0 10px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    outline: none;
-  }
-  
-  .tools input:focus {
-    border-color: #1a73e8;
-    box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
-  }
-  
-  .btn {
-    height: 36px;
-    padding: 0 12px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  
-  .card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(17,24,39,0.06);
-    height: calc(100% - 52px);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .table-wrap {
-    overflow: auto;
-  }
-  
-  .table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-  
-  .table thead th {
-    text-align: left;
-    background: #f9fafb;
-    color: #6b7280;
-    font-weight: 600;
-    font-size: 12px;
-    padding: 10px 12px;
-    border-bottom: 1px solid #eef0f3;
-  }
-  
-  .table tbody td {
-    padding: 12px;
-    border-bottom: 1px solid #f5f5f5;
-    color: #111827;
-  }
-  
-  .name-cell .name {
-    font-weight: 600;
-  }
-  
-  .name-cell .sub {
-    color: #9ca3af;
-    font-size: 12px;
-  }
-  
-  .link {
-    background: none;
-    border: none;
-    color: #1a73e8;
-    cursor: pointer;
-    padding: 0 8px 0 0;
-  }
-  
-  .link.danger {
-    color: #ef4444;
-  }
-  
-  .empty {
-    padding: 40px;
-    color: #6b7280;
-  }
-  </style> 
+}
+
+onMounted(() => {
+  fetchFileList();
+});
+</script>
+
+<style scoped>
+/* 容器和头部样式 (基本不变) */
+.file-list-container {
+  padding: 14px;
+  background-color: #f7f8fa;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  height: calc(100vh - 8vh);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.header h1 {
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box input {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 12px 8px 34px;
+  width: 180px; /* 调整宽度以容纳两个搜索框 */
+  outline: none;
+  transition: border-color 0.3s;
+}
+.search-box input:focus {
+  border-color: #1890ff;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+}
+
+.refresh-btn {
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.refresh-btn:hover {
+  background-color: #f9f9f9;
+}
+.refresh-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.table-container {
+  position: relative; /* 为遮罩层提供定位上下文 */
+  flex-grow: 1;
+  background-color: #fff;
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+}
+
+/* 加载遮罩层的样式 */
+.loading-overlay {
+  position: absolute;
+  top: 58px; /* 58px 大约是表头的高度，让加载提示出现在表头下方 */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7); /* 半透明背景 */
+  display: flex;
+  align-items: flex-start; /* 顶部对齐 */
+  justify-content: center;
+  z-index: 10;
+  padding-top: 40px; /* 向下一些间距 */
+  color: #666;
+  font-size: 14px;
+}
+
+.file-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.file-table th {
+  background-color: #fafafa;
+  font-weight: 500;
+  color: #555;
+  text-align: left;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.file-table th:hover {
+  background-color: #f5f5f5;
+}
+
+.sort-icon {
+  color: #aaa;
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 12px;
+}
+
+.file-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+}
+.file-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.file-table tbody tr:hover {
+    background-color: #f9faff;
+}
+.loading-cell, .empty-cell {
+    text-align: center;
+    color: #999;
+    height: 200px;
+}
+
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 350px; /* 防止文件名过长 */
+}
+.file-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.file-name-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-block;
+  border: 1px solid;
+}
+.status-uploaded {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border-color: #91d5ff;
+}
+.status-processing {
+  background-color: #fffbe6;
+  color: #faad14;
+  border-color: #ffe58f;
+}
+.status-default {
+  background-color: #f5f5f5;
+  color: #555;
+  border-color: #e0e0e0;
+}
+
+.action-icons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.action-icons img {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.action-icons img:hover {
+  opacity: 1;
+}
+
+/* 底部和分页样式 (重点修改) */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  flex-shrink: 0;
+}
+
+.footer-info {
+  font-size: 14px;
+  color: #888;
+}
+
+/* 使用 :deep() 选择器来覆盖 Naive UI 的内部样式 */
+:deep(.n-pagination .n-pagination-item) {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+}
+:deep(.n-pagination .n-pagination-item:hover) {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+:deep(.n-pagination .n-pagination-item--active) {
+  background-color: #1890ff;
+  color: #fff;
+  border-color: #1890ff;
+}
+:deep(.n-pagination .n-select) {
+  --n-border: 1px solid #e0e0e0 !important;
+  --n-border-hover: 1px solid #1890ff !important;
+  --n-border-active: 1px solid #1890ff !important;
+  --n-border-focus: 1px solid #1890ff !important;
+  --n-box-shadow-focus: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+</style>
