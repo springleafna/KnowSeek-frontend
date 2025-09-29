@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watchEffect } from 'vue'
 import { useMessage } from 'naive-ui'
 import { fileApi } from '@/api/api'
 
@@ -124,24 +124,11 @@ const uploadRef = ref(null)
 const visible = ref(false)
 
 // 监听props.show的变化
-const updateVisible = () => {
-  visible.value = props.show
-}
-
-// 监听visible的变化，同步到父组件
-const handleVisibleChange = (val) => {
-  if (!val) {
-    emit('update:show', false)
-    resetForm()
-  }
-}
-
-// 使用watchEffect来同步状态
-import { watchEffect } from 'vue'
 watchEffect(() => {
   visible.value = props.show
 })
 
+// 监听visible的变化，同步到父组件
 watchEffect(() => {
   if (!visible.value && props.show) {
     emit('update:show', false)
@@ -163,7 +150,7 @@ const uploadStatus = reactive({
   currentChunk: 0,
   totalChunks: 0,
   uploadId: '',
-  chunkSize: 10 * 1024 * 1024, // 10MB 分片大小
+  chunkSize: 0, 
   maxConcurrency: 3, // 最大并发数
   uploadedChunks: new Set(),
   error: ''
@@ -177,6 +164,7 @@ const resetForm = () => {
   uploadStatus.currentChunk = 0
   uploadStatus.totalChunks = 0
   uploadStatus.uploadId = ''
+  uploadStatus.chunkSize = 0
   uploadStatus.uploadedChunks.clear()
   uploadStatus.error = ''
 }
@@ -191,9 +179,33 @@ const handleCancel = () => {
   emit('update:show', false)
 }
 
+/**
+ * 根据文件大小返回合适的分片大小（字节）
+ * @param {number} fileSize 文件大小（字节）
+ * @returns {number|null} 最佳分片大小或null（表示直传）
+ */
+function getOptimalChunkSize(fileSize) {
+  if (fileSize <= 10 * 1024 * 1024) {
+    // ≤10MB：不分片（返回 null 或整个文件大小）
+    return null; // 表示直传
+  } else if (fileSize <= 100 * 1024 * 1024) {
+    // 10MB ~ 100MB
+    return 8 * 1024 * 1024; // 8MB
+  } else if (fileSize <= 500 * 1024 * 1024) {
+    // 100MB ~ 500MB
+    return 16 * 1024 * 1024; // 16MB
+  } else {
+    // >500MB
+    return 32 * 1024 * 1024; // 32MB
+  }
+}
+
 const handleUpload = async () => {
   if (!selectedFile.value || uploadStatus.uploading) return
   
+  const startTime = new Date()
+  console.log(`[LOG] 文件上传开始时间: ${startTime.toLocaleString('zh-CN', { hour12: false })}`)
+
   try {
     uploadStatus.uploading = true
     uploadStatus.progress = 0
@@ -202,14 +214,22 @@ const handleUpload = async () => {
     
     const file = selectedFile.value
     
-    // 1. 计算文件MD5
+    // 1. 根据文件大小动态获取并设置分片大小
+    const optimalChunkSize = getOptimalChunkSize(file.size);
+    
+    // 如果 optimalChunkSize 为 null (小文件)，则将整个文件作为单个分片处理
+    // 否则使用计算出的最佳分片大小
+    uploadStatus.chunkSize = optimalChunkSize === null ? file.size : optimalChunkSize;
+
+    // 2. 计算文件MD5
     const fileMd5 = await fileApi.calculateFileMD5(file)
     
-    // 2. 计算分片数量
+    // 3. 计算分片数量
+    // 这里的 uploadStatus.chunkSize 已经是动态计算后的值
     const chunkTotal = Math.ceil(file.size / uploadStatus.chunkSize)
     uploadStatus.totalChunks = chunkTotal
     
-    // 3. 初始化上传（携带知识库ID）
+    // 4. 初始化上传（携带知识库ID）
     const initResult = await fileApi.initUpload({
       fileName: file.name,
       fileMd5: fileMd5,
@@ -218,7 +238,7 @@ const handleUpload = async () => {
       knowledgeBaseId: props.knowledgeBaseId
     })
     
-    // 4. 检查是否已上传（秒传）
+    // 5. 检查是否已上传（秒传）
     if (initResult.uploaded) {
       uploadStatus.progress = 100
       message.success('文件已存在，秒传成功！')
@@ -228,19 +248,22 @@ const handleUpload = async () => {
       return
     }
     
-    // 5. 保存上传ID
+    // 6. 保存上传ID
     uploadStatus.uploadId = initResult.uploadId
     
-    // 6. 开始分片上传
-    const completeResult = await uploadChunks(file, initResult.partUploadUrls)
+    // 7. 开始分片上传
+    await uploadChunks(file, initResult.partUploadUrls)
     
-    // 7. 完成上传（携带知识库ID）
+    // 8. 完成上传（携带知识库ID）
     await fileApi.completeUpload({
       uploadId: uploadStatus.uploadId,
       fileName: file.name,
       chunkTotalSize: uploadStatus.totalChunks,
       knowledgeBaseId: props.knowledgeBaseId
     })
+
+    const endTime = new Date()
+    console.log(`[LOG] 文件上传完成时间: ${endTime.toLocaleString('zh-CN', { hour12: false })} (耗时: ${endTime - startTime}ms)`)
     
     message.success('文件上传成功！')
     emit('uploaded')
@@ -277,26 +300,22 @@ const asyncPool = async (concurrency, tasks) => {
 
 // 上传所有分片
 const uploadChunks = async (file, partUploadUrls) => {
-  const maxConcurrency = uploadStatus.maxConcurrency; // 使用状态中的并发数
+  const maxConcurrency = uploadStatus.maxConcurrency;
   const uploadTasks = [];
   
-  // 创建所有分片的上传任务
   for (let i = 0; i < uploadStatus.totalChunks; i++) {
     const chunkIndex = i + 1;
     const start = i * uploadStatus.chunkSize;
     const end = Math.min(file.size, start + uploadStatus.chunkSize);
     const chunk = file.slice(start, end);
 
-    // 取预签名直传URL（后端Map<Integer, String>，索引从1开始，键可能是数字或字符串）
     const url = partUploadUrls?.[chunkIndex] || partUploadUrls?.[String(chunkIndex)];
     if (!url) {
       throw new Error(`缺少分片 ${chunkIndex} 的预签名URL`);
     }
     
-    // 创建单个分片的上传函数
     const uploadChunk = async () => {
       try {
-        // 直传到阿里云 OSS（PUT）
         const response = await fetch(url, {
           method: 'PUT',
           body: chunk,
@@ -307,7 +326,6 @@ const uploadChunks = async (file, partUploadUrls) => {
           throw new Error(`OSS直传失败（分片${chunkIndex}）：${response.status} ${response.statusText} ${text}`);
         }
 
-        // 获取 OSS 返回的 ETag；如未暴露则回退为分片MD5
         let eTag = response.headers.get('ETag') || response.headers.get('etag') || '';
         if (eTag) {
           eTag = eTag.replace(/^\"|\"$/g, '');
@@ -316,7 +334,6 @@ const uploadChunks = async (file, partUploadUrls) => {
         }
         console.log('ETag(分片' + chunkIndex + '):', eTag);
 
-        // 将分片信息上报服务端（保存 ETag 等信息）
         await fileApi.uploadChunk({
           uploadId: uploadStatus.uploadId,
           chunkIndex: chunkIndex,
@@ -324,7 +341,6 @@ const uploadChunks = async (file, partUploadUrls) => {
           chunkSize: chunk.size
         });
         
-        // 标记分片已上传并更新进度
         uploadStatus.uploadedChunks.add(i);
         updateTotalProgress();
         
@@ -338,28 +354,15 @@ const uploadChunks = async (file, partUploadUrls) => {
     uploadTasks.push(uploadChunk);
   }
   
-  // 使用并发控制上传分片
   const results = await asyncPool(maxConcurrency, uploadTasks);
   
-  // 检查上传结果
-  const failedChunks = [];
-  const successfulChunks = [];
+  const failedChunks = results.filter(result => !result.success);
   
-  results.forEach((result) => {
-    if (result.success) {
-      successfulChunks.push(result);
-    } else {
-      failedChunks.push(result);
-    }
-  });
-  
-  // 如果有失败的分片，抛出错误
   if (failedChunks.length > 0) {
     const errorMessages = failedChunks.map(chunk => `分片${chunk.chunkIndex}: ${chunk.error}`).join(', ');
     throw new Error(`以下分片上传失败: ${errorMessages}`);
   }
   
-  // 返回完成结果（调用在 handleUpload 中）
   return { success: true };
 };
 
