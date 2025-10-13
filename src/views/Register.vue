@@ -271,6 +271,12 @@ const handleRegister = async () => {
   color: #3367d6;
 }
 
+/* 覆盖 Naive UI 的默认边框样式 */
+.register-button :deep(.n-button__border),
+.register-button :deep(.n-button__state-border) {
+  border: none !important;
+}
+
 .register-button {
   height: 48px;
   font-size: 1rem;
@@ -285,6 +291,15 @@ const handleRegister = async () => {
   background: #3367d6 !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.register-button:focus {
+  background: #4285f4 !important;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.register-button:active {
+  background: #2c5bb4 !important;
 }
 
 .login-section {

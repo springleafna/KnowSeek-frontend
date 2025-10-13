@@ -176,7 +176,7 @@
       </div>
 
       <template #footer>
-        <n-button type="primary" @click="showHelp = false">知道了</n-button>
+        <n-button type="primary" round @click="showHelp = false">知道了</n-button>
       </template>
     </n-modal>
   </div>
@@ -391,20 +391,36 @@ function goToRegister() {
   margin-bottom: 80px;
 }
 
+/* 使用深度选择器覆盖 Naive UI 的默认样式 */
+.btn-primary :deep(.n-button__border),
+.btn-primary :deep(.n-button__state-border) {
+  border: none !important;
+}
+
 .btn-primary {
   height: 52px;
   padding: 0 40px;
   font-size: 16px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3) !important;
   transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4) !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.btn-primary:focus {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3) !important;
+}
+
+.btn-primary:active {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4192 100%) !important;
 }
 
 .btn-secondary {
@@ -603,20 +619,36 @@ function goToRegister() {
   margin: 0 0 40px 0;
 }
 
+/* 覆盖 btn-cta 的 Naive UI 默认样式 */
+.btn-cta :deep(.n-button__border),
+.btn-cta :deep(.n-button__state-border) {
+  border: none !important;
+}
+
 .btn-cta {
   height: 56px;
   padding: 0 48px;
   font-size: 18px;
   font-weight: 600;
-  background: white;
-  color: #667eea;
-  border: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  background: white !important;
+  color: #667eea !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
 }
 
 .btn-cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3) !important;
+  background: white !important;
+}
+
+.btn-cta:focus {
+  background: white !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-cta:active {
+  background: #f8f8f8 !important;
 }
 
 /* Footer */

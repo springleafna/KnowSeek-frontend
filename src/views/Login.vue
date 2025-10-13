@@ -319,6 +319,12 @@ const handleLogin = async () => {
   color: #3367d6;
 }
 
+/* 覆盖 Naive UI 的默认边框样式 */
+.login-button :deep(.n-button__border),
+.login-button :deep(.n-button__state-border) {
+  border: none !important;
+}
+
 .login-button {
   height: 48px;
   font-size: 1rem;
@@ -333,6 +339,15 @@ const handleLogin = async () => {
   background: #3367d6 !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.login-button:focus {
+  background: #4285f4 !important;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.login-button:active {
+  background: #2c5bb4 !important;
 }
 
 .register-section {
