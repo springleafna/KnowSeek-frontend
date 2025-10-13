@@ -35,6 +35,11 @@
 
           <n-button size="large" round @click="goToLogin" class="btn-secondary">
             登录账号
+            <template #icon>
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M13.3 17.275q-.3-.3-.288-.725t.313-.7L16.15 13H5q-.425 0-.713-.288T4 12q0-.425.288-.713T5 11h11.15L13.3 8.15q-.3-.3-.3-.713t.3-.712q.3-.3.713-.3t.712.3l4.6 4.6q.15.15.213.325t.062.35q0 .175-.063.35t-.212.325l-4.6 4.6q-.275.275-.687.275t-.713-.275Z"/>
+              </svg>
+            </template>
           </n-button>
         </div>
 
@@ -423,21 +428,45 @@ function goToRegister() {
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4192 100%) !important;
 }
 
+/* 覆盖 btn-secondary 的 Naive UI 默认样式 */
+.btn-secondary :deep(.n-button__border),
+.btn-secondary :deep(.n-button__state-border) {
+  border: 2px solid #e2e8f0 !important;
+}
+
 .btn-secondary {
-  height: 52px;
-  padding: 0 40px;
-  font-size: 16px;
-  font-weight: 600;
-  background: white;
-  border: 2px solid #e2e8f0;
-  color: #475569;
+  height: 52px !important;
+  padding: 0 40px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  background: white !important;
+  color: #475569 !important;
   transition: all 0.3s ease;
 }
 
+.btn-secondary:hover :deep(.n-button__border),
+.btn-secondary:hover :deep(.n-button__state-border) {
+  border-color: #cbd5e1 !important;
+}
+
 .btn-secondary:hover {
-  border-color: #cbd5e1;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+  background: white !important;
+}
+
+.btn-secondary:focus {
+  background: white !important;
+  box-shadow: 0 0 0 2px rgba(226, 232, 240, 0.3) !important;
+}
+
+.btn-secondary:focus :deep(.n-button__border),
+.btn-secondary:focus :deep(.n-button__state-border) {
+  border-color: #cbd5e1 !important;
+}
+
+.btn-secondary:active {
+  background: #f8f9fa !important;
 }
 
 .hero-stats {
