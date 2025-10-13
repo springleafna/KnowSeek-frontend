@@ -287,6 +287,7 @@ onMounted(fetchList);
 .kb-container {
   height: calc(100vh - 8vh);
   padding: 24px;
+  overflow-y: auto;
 }
 .kb-header {
   margin-bottom: 16px;
