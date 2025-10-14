@@ -24,7 +24,7 @@
         </p>
 
         <div class="hero-actions">
-          <n-button type="primary" size="large" round @click="goToRegister" class="btn-primary">
+          <n-button type="primary" size="large" round @click="goToLogin" class="btn-primary">
             立即开始
             <template #icon>
               <svg viewBox="0 0 24 24" width="20" height="20">
@@ -33,8 +33,8 @@
             </template>
           </n-button>
 
-          <n-button size="large" round @click="goToLogin" class="btn-secondary">
-            登录账号
+          <n-button size="large" round @click="goToRegister" class="btn-secondary">
+            注册账号
             <template #icon>
               <svg viewBox="0 0 24 24" width="20" height="20">
                 <path fill="currentColor" d="M13.3 17.275q-.3-.3-.288-.725t.313-.7L16.15 13H5q-.425 0-.713-.288T4 12q0-.425.288-.713T5 11h11.15L13.3 8.15q-.3-.3-.3-.713t.3-.712q.3-.3.713-.3t.712.3l4.6 4.6q.15.15.213.325t.062.35q0 .175-.063.35t-.212.325l-4.6 4.6q-.275.275-.687.275t-.713-.275Z"/>

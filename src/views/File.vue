@@ -2,30 +2,49 @@
   <div class="file-list-container">
     <!-- 头部区域 -->
     <div class="header">
-      <h1>文件列表</h1>
+      <div class="title-section">
+        <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="title-content">
+          <h1>文件管理</h1>
+          <p class="subtitle">管理和查看所有上传的文件</p>
+        </div>
+      </div>
+
       <div class="header-right">
         <!-- 文件名搜索框 -->
         <div class="search-box">
-          <img :src="searchIcon" alt="search" class="search-icon" />
-          <input 
-            type="text" 
-            placeholder="搜索文件名..." 
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8" stroke-width="2"/>
+            <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="搜索文件名..."
             v-model="queryParams.fileName"
             @keyup.enter="handleSearch"
+            class="search-input"
           />
         </div>
         <!-- 知识库搜索框 -->
         <div class="search-box">
-          <img :src="searchIcon" alt="search" class="search-icon" />
-          <input 
-            type="text" 
-            placeholder="搜索知识库..." 
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8" stroke-width="2"/>
+            <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="搜索知识库..."
             v-model="queryParams.kbName"
             @keyup.enter="handleSearch"
+            class="search-input"
           />
         </div>
-        <button class="refresh-btn" @click="fetchFileList">
-          <img :src="refreshIcon" alt="refresh" class="refresh-icon" />
+        <button class="refresh-btn" @click="fetchFileList" :disabled="loading">
+          <svg class="btn-icon" :class="{ spinning: loading }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <span>刷新</span>
         </button>
       </div>
@@ -33,69 +52,110 @@
 
     <!-- 表格区域 -->
     <div class="table-container">
-      <table class="file-table">
+      <table class="file-table" v-if="!loading && fileList.length > 0">
         <thead>
           <tr>
-            <th @click="handleSortChange('fileName')">
+            <th @click="handleSortChange('fileName')" class="sortable">
               文件名
-              <span class="sort-icon">▲▼</span>
+              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </th>
-            <th @click="handleSortChange('knowledgeBaseName')">
+            <th @click="handleSortChange('knowledgeBaseName')" class="sortable">
               知识库
-              <span class="sort-icon">▲▼</span>
+              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </th>
-            <th @click="handleSortChange('totalSize')">
+            <th @click="handleSortChange('totalSize')" class="sortable">
               大小
-              <span class="sort-icon">▲▼</span>
+              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </th>
-            <th @click="handleSortChange('type')">
+            <th @click="handleSortChange('type')" class="sortable">
               类型
-              <span class="sort-icon">▲▼</span>
+              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </th>
-            <th @click="handleSortChange('createdAt')">
+            <th @click="handleSortChange('createdAt')" class="sortable">
               上传时间
-              <span class="sort-icon">▲▼</span>
+              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </th>
-            <th @click="handleSortChange('status')">
+            <th @click="handleSortChange('status')" class="sortable">
               状态
-              <span class="sort-icon">▲▼</span>
+              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="!loading && fileList.length === 0">
-            <td colspan="7" class="empty-cell">暂无文件</td>
-          </tr>
-          <tr v-for="file in fileList" :key="file.id">
+          <tr v-for="file in fileList" :key="file.id" class="file-row">
             <td>
               <div class="file-name-cell">
-                <img :src="getFileIcon(file.fileName)" alt="file-icon" class="file-icon" />
+                <div class="file-icon-wrapper" :class="getFileIconClass(file.fileName)">
+                  <svg class="file-svg-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
+                  </svg>
+                </div>
                 <span class="file-name-text">{{ file.fileName }}</span>
               </div>
             </td>
-            <td>{{ file.knowledgeBaseName }}</td>
-            <td>{{ file.totalSize }}</td>
-            <td>{{ file.type }}</td>
-            <td>{{ formatDateTime(file.createdAt) }}</td>
+            <td>
+              <span class="kb-badge">{{ file.knowledgeBaseName }}</span>
+            </td>
+            <td class="size-cell">{{ file.totalSize }}</td>
+            <td>
+              <span class="type-tag">{{ getFileType(file.fileName) }}</span>
+            </td>
+            <td class="time-cell">{{ formatDateTime(file.createdAt) }}</td>
             <td>
               <span :class="['status-badge', getStatusClass(file.status)]">
                 {{ file.status }}
               </span>
             </td>
             <td>
-              <div class="action-icons">
-                <img :src="previewIcon" alt="preview" title="预览（暂未实现）" />
-                <img :src="downloadIcon" alt="download" title="下载（暂未实现）" />
+              <div class="action-buttons">
+                <button class="action-btn preview-btn" title="预览">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/>
+                    <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2"/>
+                  </svg>
+                </button>
+                <button class="action-btn download-btn" title="下载">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
+
+      <!-- Loading 状态 -->
+      <div v-else-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>暂无文件</h3>
+        <p>还没有上传任何文件</p>
+      </div>
     </div>
 
     <!-- 底部和分页 -->
-    <div class="footer">
+    <div class="footer" v-if="fileList.length > 0">
       <div class="footer-info">{{ paginationInfoText }}</div>
       <n-pagination
         :item-count="pagination.total"
@@ -115,18 +175,6 @@ import { ref, onMounted, computed } from 'vue';
 import { fileApi } from '@/api/fileApi';
 import { NPagination, useMessage } from 'naive-ui';
 
-// --- 静态资源导入 ---
-import searchIcon from '@/assets/file/search.png';
-import refreshIcon from '@/assets/file/refresh.png';
-import pdfIcon from '@/assets/file/pdf.png';
-import xlsxIcon from '@/assets/file/xlsx.png';
-import docxIcon from '@/assets/file/docx.png';
-import pptxIcon from '@/assets/file/pptx.png';
-import jpgIcon from '@/assets/file/jpg.png';
-import previewIcon from '@/assets/file/preview-true.png';
-import downloadIcon from '@/assets/file/download-true.png';
-import defaultIcon from '@/assets/file/jpg.png';
-
 // --- 初始化 ---
 const message = useMessage();
 
@@ -136,7 +184,7 @@ const loading = ref(false);
 
 const pagination = ref({
   pageNum: 1,
-  pageSize: 10, // 默认每页10条
+  pageSize: 10,
   total: 0,
 });
 
@@ -189,7 +237,6 @@ function handleSortChange(column) {
   fetchFileList();
 }
 
-// Naive UI 分页事件处理
 function handlePageUpdate(newPage) {
   pagination.value.pageNum = newPage;
   fetchFileList();
@@ -197,34 +244,47 @@ function handlePageUpdate(newPage) {
 
 function handlePageSizeUpdate(newPageSize) {
   pagination.value.pageSize = newPageSize;
-  pagination.value.pageNum = 1; // 切换每页数量时，回到第一页
+  pagination.value.pageNum = 1;
   fetchFileList();
 }
 
-function getFileIcon(fileName) {
-  if (!fileName) return defaultIcon;
+function getFileIconClass(fileName) {
+  if (!fileName) return 'icon-default';
   const extension = fileName.split('.').pop().toLowerCase();
   switch (extension) {
-    case 'pdf': return pdfIcon;
-    case 'xlsx': return xlsxIcon;
-    case 'docx': return docxIcon;
-    case 'pptx': return pptxIcon;
-    case 'jpg': case 'jpeg': case 'png': return jpgIcon;
-    default: return defaultIcon;
+    case 'pdf': return 'icon-pdf';
+    case 'xlsx': case 'xls': return 'icon-excel';
+    case 'docx': case 'doc': return 'icon-word';
+    case 'pptx': case 'ppt': return 'icon-ppt';
+    case 'jpg': case 'jpeg': case 'png': case 'gif': return 'icon-image';
+    case 'txt': case 'md': return 'icon-text';
+    default: return 'icon-default';
   }
 }
 
+function getFileType(fileName) {
+  if (!fileName) return '-';
+  const extension = fileName.split('.').pop().toLowerCase();
+  return extension.toUpperCase();
+}
+
 function getStatusClass(status) {
-    if (status === '处理中') return 'status-processing';
-    if (status === '上传完成' || status === '处理完成') return 'status-uploaded';
-    return 'status-default';
+  if (status === '处理中') return 'status-processing';
+  if (status === '上传完成' || status === '处理完成') return 'status-completed';
+  if (status === '失败') return 'status-failed';
+  return 'status-default';
 }
 
 function formatDateTime(dateTimeStr) {
   if (!dateTimeStr) return '-';
   try {
     const date = new Date(dateTimeStr);
-    return date.toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' ');
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${d} ${hh}:${mm}`;
   } catch {
     return dateTimeStr;
   }
@@ -236,209 +296,432 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 容器和头部样式 (基本不变) */
 .file-list-container {
-  padding: 22px;
-  background-color: #f7f8fa;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   height: calc(100vh - 8vh);
+  padding: 24px 32px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   display: flex;
   flex-direction: column;
 }
 
+/* 头部样式 */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 20px;
 }
 
-.header h1 {
-  font-size: 22px;
-  font-weight: 500;
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title-icon {
+  width: 32px;
+  height: 32px;
+  color: #1a73e8;
+  flex-shrink: 0;
+}
+
+.title-content h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #111827;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
   margin: 0;
+  font-size: 14px;
+  color: #6b7280;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
+/* 搜索框 */
 .search-box {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.search-box input {
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 8px 12px 8px 34px;
-  width: 180px; /* 调整宽度以容纳两个搜索框 */
-  outline: none;
-  transition: border-color 0.3s;
-}
-.search-box input:focus {
-  border-color: #1890ff;
-}
 .search-icon {
   position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.search-input {
+  height: 38px;
+  padding: 0 12px 0 38px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  width: 200px;
+  background: white;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.search-input:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
 }
 
 .refresh-btn {
-  border: 1px solid #e0e0e0;
-  background-color: #fff;
-  border-radius: 6px;
-  padding: 8px 16px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
   font-size: 14px;
-}
-.refresh-btn:hover {
-  background-color: #f9f9f9;
-}
-.refresh-icon {
-  width: 14px;
-  height: 14px;
+  color: #374151;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.refresh-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 表格容器 */
 .table-container {
-  position: relative; /* 为遮罩层提供定位上下文 */
-  flex-grow: 1;
-  background-color: #fff;
-  border-radius: 8px;
-  overflow-x: auto;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #f0f0f0;
-}
-
-/* 加载遮罩层的样式 */
-.loading-overlay {
-  position: absolute;
-  top: 58px; /* 58px 大约是表头的高度，让加载提示出现在表头下方 */
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7); /* 半透明背景 */
+  position: relative;
+  flex: 1;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   display: flex;
-  align-items: flex-start; /* 顶部对齐 */
-  justify-content: center;
-  z-index: 10;
-  padding-top: 40px; /* 向下一些间距 */
-  color: #666;
-  font-size: 14px;
+  flex-direction: column;
 }
 
 .file-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.file-table th {
-  background-color: #fafafa;
-  font-weight: 500;
-  color: #555;
+.file-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   text-align: left;
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 14px;
-  cursor: pointer;
-  user-select: none;
+  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 16px;
+  border-bottom: 2px solid #e5e7eb;
   white-space: nowrap;
 }
-.file-table th:hover {
-  background-color: #f5f5f5;
+
+.file-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.file-table th.sortable:hover {
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #1a73e8;
 }
 
 .sort-icon {
-  color: #aaa;
+  width: 14px;
+  height: 14px;
   display: inline-block;
   margin-left: 4px;
-  font-size: 12px;
+  opacity: 0.5;
+  vertical-align: middle;
 }
 
-.file-table td {
+.file-table tbody td {
   padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
   font-size: 14px;
-  color: #333;
-  white-space: nowrap;
-}
-.file-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.file-table tbody tr:hover {
-    background-color: #f9faff;
-}
-.loading-cell, .empty-cell {
-    text-align: center;
-    color: #999;
-    height: 200px;
+  vertical-align: middle;
 }
 
+.file-row {
+  transition: all 0.2s;
+}
+
+.file-row:hover {
+  background: #f9fafb;
+}
+
+/* 文件名单元格 */
 .file-name-cell {
   display: flex;
   align-items: center;
   gap: 12px;
-  max-width: 350px; /* 防止文件名过长 */
+  max-width: 400px;
 }
-.file-icon {
-  width: 24px;
-  height: 24px;
+
+.file-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  transition: all 0.2s;
 }
+
+.file-svg-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-pdf {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.icon-excel {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.icon-word {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.icon-ppt {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.icon-image {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  color: white;
+}
+
+.icon-text {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.icon-default {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
 .file-name-text {
-  white-space: nowrap;
+  font-weight: 600;
+  color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* 知识库徽章 */
+.kb-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+.size-cell {
+  color: #6b7280;
   font-weight: 500;
 }
 
-.status-badge {
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+.time-cell {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* 类型标签 */
+.type-tag {
   display: inline-block;
+  padding: 4px 10px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* 状态标签 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
   border: 1px solid;
 }
-.status-uploaded {
-  background-color: #e6f7ff;
-  color: #1890ff;
-  border-color: #91d5ff;
-}
+
 .status-processing {
-  background-color: #fffbe6;
-  color: #faad14;
-  border-color: #ffe58f;
-}
-.status-default {
-  background-color: #f5f5f5;
-  color: #555;
-  border-color: #e0e0e0;
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #60a5fa;
 }
 
-.action-icons {
+.status-completed {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #34d399;
+}
+
+.status-failed {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #f87171;
+}
+
+.status-default {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+/* 操作按钮 */
+.action-buttons {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-.action-icons img {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  opacity: 0.7;
-}
-.action-icons img:hover {
-  opacity: 1;
+  gap: 8px;
 }
 
-/* 底部和分页样式 (重点修改) */
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.action-btn:hover {
+  border-color: #1a73e8;
+  background: #f0f7ff;
+  transform: translateY(-1px);
+}
+
+.action-btn:hover svg {
+  color: #1a73e8;
+}
+
+/* Loading 状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  color: #d1d5db;
+  margin-bottom: 20px;
+  stroke-width: 1.5;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* 底部和分页 */
 .footer {
   display: flex;
   justify-content: space-between;
@@ -449,28 +732,72 @@ onMounted(() => {
 
 .footer-info {
   font-size: 14px;
-  color: #888;
+  color: #6b7280;
+  font-weight: 500;
 }
 
-/* 使用 :deep() 选择器来覆盖 Naive UI 的内部样式 */
+/* Naive UI 分页样式覆盖 */
 :deep(.n-pagination .n-pagination-item) {
   background-color: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
 }
+
 :deep(.n-pagination .n-pagination-item:hover) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: #1a73e8;
+  color: #1a73e8;
+  transform: translateY(-1px);
 }
+
 :deep(.n-pagination .n-pagination-item--active) {
-  background-color: #1890ff;
+  background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
   color: #fff;
-  border-color: #1890ff;
+  border-color: #1a73e8;
+  box-shadow: 0 2px 4px rgba(26, 115, 232, 0.3);
 }
+
+:deep(.n-pagination .n-pagination-quick-jumper) {
+  color: #6b7280;
+}
+
+:deep(.n-pagination .n-input) {
+  border-radius: 8px;
+}
+
 :deep(.n-pagination .n-select) {
-  --n-border: 1px solid #e0e0e0 !important;
-  --n-border-hover: 1px solid #1890ff !important;
-  --n-border-active: 1px solid #1890ff !important;
-  --n-border-focus: 1px solid #1890ff !important;
-  --n-box-shadow-focus: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+  --n-border: 1px solid #e5e7eb !important;
+  --n-border-hover: 1px solid #1a73e8 !important;
+  --n-border-active: 1px solid #1a73e8 !important;
+  --n-border-focus: 1px solid #1a73e8 !important;
+  --n-box-shadow-focus: 0 0 0 2px rgba(26, 115, 232, 0.2) !important;
+  --n-border-radius: 8px !important;
+}
+
+/* 响应式 */
+@media (max-width: 1400px) {
+  .file-list-container {
+    padding: 16px 20px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .search-input {
+    width: 160px;
+  }
+}
+
+@media (max-width: 768px) {
+  .file-name-cell {
+    max-width: 200px;
+  }
 }
 </style>
