@@ -55,41 +55,104 @@
       <table class="file-table" v-if="!loading && fileList.length > 0">
         <thead>
           <tr>
-            <th @click="handleSortChange('fileName')" class="sortable">
-              文件名
-              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <th @click="handleSortChange('fileName')" class="sortable" :class="{ 'is-sorting': queryParams.sortBy === 'fileName' }">
+              <span class="th-content">
+                文件名
+                <span class="sort-icon-wrapper">
+                  <!-- 升序图标 -->
+                  <svg v-if="queryParams.sortBy === 'fileName' && queryParams.sortOrder === 'asc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 15l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <!-- 降序图标 -->
+                  <svg v-else-if="queryParams.sortBy === 'fileName' && queryParams.sortOrder === 'desc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <!-- 默认图标 -->
+                  <svg v-else class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </span>
             </th>
-            <th @click="handleSortChange('knowledgeBaseName')" class="sortable">
-              知识库
-              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <th @click="handleSortChange('knowledgeBaseName')" class="sortable" :class="{ 'is-sorting': queryParams.sortBy === 'knowledgeBaseName' }">
+              <span class="th-content">
+                知识库
+                <span class="sort-icon-wrapper">
+                  <svg v-if="queryParams.sortBy === 'knowledgeBaseName' && queryParams.sortOrder === 'asc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 15l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else-if="queryParams.sortBy === 'knowledgeBaseName' && queryParams.sortOrder === 'desc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </span>
             </th>
-            <th @click="handleSortChange('totalSize')" class="sortable">
-              大小
-              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <th @click="handleSortChange('totalSize')" class="sortable" :class="{ 'is-sorting': queryParams.sortBy === 'totalSize' }">
+              <span class="th-content">
+                大小
+                <span class="sort-icon-wrapper">
+                  <svg v-if="queryParams.sortBy === 'totalSize' && queryParams.sortOrder === 'asc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 15l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else-if="queryParams.sortBy === 'totalSize' && queryParams.sortOrder === 'desc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </span>
             </th>
-            <th @click="handleSortChange('type')" class="sortable">
-              类型
-              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <th @click="handleSortChange('type')" class="sortable" :class="{ 'is-sorting': queryParams.sortBy === 'type' }">
+              <span class="th-content">
+                类型
+                <span class="sort-icon-wrapper">
+                  <svg v-if="queryParams.sortBy === 'type' && queryParams.sortOrder === 'asc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 15l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else-if="queryParams.sortBy === 'type' && queryParams.sortOrder === 'desc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </span>
             </th>
-            <th @click="handleSortChange('createdAt')" class="sortable">
-              上传时间
-              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <th @click="handleSortChange('createdAt')" class="sortable" :class="{ 'is-sorting': queryParams.sortBy === 'createdAt' }">
+              <span class="th-content">
+                上传时间
+                <span class="sort-icon-wrapper">
+                  <svg v-if="queryParams.sortBy === 'createdAt' && queryParams.sortOrder === 'asc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 15l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else-if="queryParams.sortBy === 'createdAt' && queryParams.sortOrder === 'desc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </span>
             </th>
-            <th @click="handleSortChange('status')" class="sortable">
-              状态
-              <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <th @click="handleSortChange('status')" class="sortable" :class="{ 'is-sorting': queryParams.sortBy === 'status' }">
+              <span class="th-content">
+                状态
+                <span class="sort-icon-wrapper">
+                  <svg v-if="queryParams.sortBy === 'status' && queryParams.sortOrder === 'asc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M5 15l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else-if="queryParams.sortBy === 'status' && queryParams.sortOrder === 'desc'" class="sort-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </span>
             </th>
             <th>操作</th>
           </tr>
@@ -471,13 +534,33 @@ onMounted(() => {
   color: #1a73e8;
 }
 
+.file-table th.sortable.is-sorting {
+  color: #1a73e8;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
 .sort-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   display: inline-block;
-  margin-left: 4px;
-  opacity: 0.5;
-  vertical-align: middle;
+  opacity: 0.4;
+  transition: all 0.2s;
+}
+
+.sort-icon.active {
+  opacity: 1;
+  color: #1a73e8;
 }
 
 .file-table tbody td {
