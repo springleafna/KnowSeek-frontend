@@ -8,21 +8,19 @@ const themeOverrides = {
     primaryColorHover: '#5a93f0',
     primaryColorPressed: '#2a5fb8',
     // 全局基础圆角（影响 Button、Input、Select 等多数组件）
-    borderRadius: '12px'
+    borderRadius: '8px'
   },
-  // 显式设置 Dialog 的圆角
   Dialog: {
-    borderRadius: '12px'
+    borderRadius: '8px'
   },
   Button: {
-    borderRadius: '12px'
+    borderRadius: '8px'
   },
   Card: {
-    borderRadius: '12px'
+    borderRadius: '8px'
   },
-  // 如果你用到 Message、Notification 等，也可以设置
   Message: {
-    borderRadius: '12px'
+    borderRadius: '8px'
   }
 }
 </script>

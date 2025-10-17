@@ -1,28 +1,33 @@
 <template>
   <div class="app-layout">
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" :class="{ collapsed: isCollapsed }">
       <nav class="menu">
         <router-link to="/app/chat" class="menu-item" active-class="active">
           <img src="@/assets/icon/chat.png" alt="AI对话" class="menu-icon">
-          AI对话
+          <span class="menu-text">AI对话</span>
         </router-link>
         <router-link to="/app/knowledge" class="menu-item" active-class="active">
           <img src="@/assets/icon/knowledgeBase.png" alt="知识库" class="menu-icon">
-          知识库
+          <span class="menu-text">知识库</span>
         </router-link>
         <router-link to="/app/file" class="menu-item" active-class="active">
           <img src="@/assets/icon/fileList.png" alt="文件列表" class="menu-icon">
-          文件列表
+          <span class="menu-text">文件列表</span>
         </router-link>
         <router-link to="/app/organization" class="menu-item" active-class="active">
           <img src="@/assets/icon/organization.png" alt="组织管理" class="menu-icon">
-          组织管理
+          <span class="menu-text">组织管理</span>
         </router-link>
         <router-link to="/app/users" class="menu-item" active-class="active">
           <img src="@/assets/icon/user.png" alt="用户管理" class="menu-icon">
-          用户管理
+          <span class="menu-text">用户管理</span>
         </router-link>
       </nav>
+      <button class="toggle-btn" @click="toggleSidebar" :title="isCollapsed ? '展开侧边栏' : '收起侧边栏'">
+        <svg class="toggle-icon" :class="{ rotated: isCollapsed }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
     </aside>
     <div class="content">
       <router-view />
@@ -31,6 +36,13 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const isCollapsed = ref(false)
+
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value
+}
 </script>
 
 <style scoped>
@@ -53,6 +65,11 @@
   background: var(--bg-page);
   color: var(--text-primary);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-layout:has(.app-sidebar.collapsed) {
+  grid-template-columns: 64px 1fr;
 }
 
 .app-sidebar {
@@ -60,6 +77,8 @@
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .brand {
@@ -73,6 +92,7 @@
   flex-direction: column;
   padding: 6px;
   gap: 4px;
+  flex: 1;
 }
 
 .menu-item {
@@ -86,6 +106,9 @@
   font-size: 16px;
   font-weight: 500;
   font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .menu-icon {
@@ -93,6 +116,22 @@
   height: 20px;
   flex-shrink: 0;
   object-fit: contain;
+}
+
+.menu-text {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+}
+
+.app-sidebar.collapsed .menu-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.app-sidebar.collapsed .menu-item {
+  justify-content: center;
+  padding: 10px;
 }
 
 .menu-item:hover {
@@ -103,6 +142,40 @@
   background: var(--accent-weak);
   color: var(--accent);
   font-weight: 600;
+}
+
+.toggle-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-btn:hover {
+  background: #f3f4f6;
+  box-shadow: var(--shadow-md);
+}
+
+.toggle-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-icon.rotated {
+  transform: rotate(180deg);
 }
 
 .content {

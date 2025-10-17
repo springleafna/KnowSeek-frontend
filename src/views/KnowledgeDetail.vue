@@ -425,7 +425,7 @@ onMounted(() => {
   height: 38px;
   padding: 0 20px;
   border: none;
-  background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+  background: #1a73e8;
   color: white;
   border-radius: 10px;
   cursor: pointer;
@@ -438,7 +438,7 @@ onMounted(() => {
 .primary-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
-  background: linear-gradient(135deg, #1557b0 0%, #0d47a1 100%);
+  background: #1557b0;
 }
 
 .primary-btn .icon {

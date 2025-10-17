@@ -28,8 +28,8 @@
         clearable
       />
 
-      <n-button round color="#387BE9" @click="openCreate">
-        新增
+      <n-button color="#387BE9" @click="openCreate">
+        创建知识库
       </n-button>
     </n-space>
 
