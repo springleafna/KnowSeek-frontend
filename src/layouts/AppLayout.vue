@@ -106,9 +106,9 @@ const toggleSidebar = () => {
   font-size: 16px;
   font-weight: 500;
   font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
-  transition: all 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
+  position: relative;
 }
 
 .menu-icon {
@@ -116,6 +116,7 @@ const toggleSidebar = () => {
   height: 20px;
   flex-shrink: 0;
   object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu-text {
@@ -125,13 +126,14 @@ const toggleSidebar = () => {
 
 .app-sidebar.collapsed .menu-text {
   opacity: 0;
-  width: 0;
-  overflow: hidden;
 }
 
 .app-sidebar.collapsed .menu-item {
-  justify-content: center;
-  padding: 10px;
+  padding: 10px 12px;
+}
+
+.app-sidebar.collapsed .menu-icon {
+  transform: translateX(4px);
 }
 
 .menu-item:hover {
