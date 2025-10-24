@@ -1,5 +1,6 @@
 <script setup>
-import { NConfigProvider, lightTheme } from 'naive-ui'
+import { lightTheme } from 'naive-ui'
+import { zhCN } from 'naive-ui'
 import AppHeader from '@/components/AppHeader.vue'
 
 const themeOverrides = {
@@ -8,12 +9,11 @@ const themeOverrides = {
     primaryColorHover: '#5a93f0',
     primaryColorPressed: '#2a5fb8',
     // 全局基础圆角（影响 Button、Input、Select 等多数组件）
-    borderRadius: '8px'
+    borderRadius: '8px',
+    borderRadiusSmall: '8px',
+    borderRadiusLarge: '8px'
   },
   Dialog: {
-    borderRadius: '8px'
-  },
-  Button: {
     borderRadius: '8px'
   },
   Card: {
@@ -21,7 +21,7 @@ const themeOverrides = {
   },
   Message: {
     borderRadius: '8px'
-  }
+  },
 }
 </script>
 
@@ -29,6 +29,8 @@ const themeOverrides = {
   <n-config-provider
     :theme="lightTheme"
     :theme-overrides="themeOverrides"
+    :locale="zhCN"
+    :date-locale="zhCN.dateLocale"
   >
     <n-message-provider>
       <n-dialog-provider>

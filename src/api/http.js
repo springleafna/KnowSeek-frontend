@@ -50,7 +50,7 @@ httpClient.interceptors.response.use(
     // 标准结果：{ code, message, data }
     if (res && typeof res === 'object' && 'code' in res) {
       if (res.code === 0) {
-        return res.data;
+        return Promise.resolve(res.data) 
       }
       const msg = res.message || '请求失败';
       console.error('Business Error:', msg);

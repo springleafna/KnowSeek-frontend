@@ -27,18 +27,29 @@ export const userApi = {
   getUserInfo() {
     return http.get('/user/info');
   },
-  updateUserInfo(params) {
-    return http.put('/user/update', params);
+  /**
+   * 管理员获取用户列表
+   * @param {Object} params - 查询参数
+   * @param {number} params.pageNum - 页码
+   * @param {number} params.pageSize - 每页大小
+   */
+  getUserList(params = { pageNum: 1, pageSize: 10 }) {
+    return http.get('/user/list', { params })
   },
-  changePassword(params) {
-    return http.put('/user/change-password', params);
+  deleteUser(id) {
+   return http.delete('/user/delete', {
+      params: {
+        id
+      }
+    })
   },
-  validateToken() {
-    return http.get('/auth/validate');
-  },
-  refreshToken() {
-    return http.post('/auth/refresh');
-  },
+  resetPassword(id) {
+    http.put('/user/resetPassword', {
+      params: {
+        id
+      }
+    })
+  }
 };
 
 export default userApi;
