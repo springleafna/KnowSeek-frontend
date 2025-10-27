@@ -56,12 +56,13 @@
         <table class="table">
           <thead>
             <tr>
-              <th style="width: 40%;">文件名</th>
-              <th style="width: 12%;">大小</th>
-              <th style="width: 10%;">类型</th>
-              <th style="width: 18%;">上传时间</th>
-              <th style="width: 12%;">状态</th>
+              <th style="width: 35%;">文件名</th>
+              <th style="width: 10%;">大小</th>
+              <th style="width: 9%;">类型</th>
+              <th style="width: 16%;">上传时间</th>
+              <th style="width: 10%;">状态</th>
               <th style="width: 8%;">可见性</th>
+              <th style="width: 12%;">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -107,6 +108,13 @@
                   {{ file.isPublic ? '公开' : '私有' }}
                 </span>
               </td>
+              <td>
+                <button class="delete-btn" @click="handleDelete(file)" :title="'删除文件'">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -145,11 +153,15 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useDialog, useMessage } from 'naive-ui'
 import { knowledgeBaseApi } from '@/api/knowledgeBaseApi'
+import { fileApi } from '@/api/fileApi'
 import FileUploadModal from '@/components/FileUploadModal.vue'
 
 const route = useRoute()
 const router = useRouter()
+const dialog = useDialog()
+const message = useMessage()
 const kbId = ref(route.params.id)
 
 const kb = ref(null)
@@ -234,6 +246,24 @@ async function loadFiles() {
 
 function handleFileUploaded() {
   loadFiles()
+}
+
+function handleDelete(file) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定要删除文件 "${file.name}" 吗？此操作无法撤销。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await fileApi.deleteFile(file.id)
+        message.success('文件删除成功')
+        loadFiles()
+      } catch (error) {
+        message.error(error.message || '删除文件失败')
+      }
+    }
+  })
 }
 
 watch(() => route.params.id, (id) => {
@@ -638,6 +668,34 @@ onMounted(() => {
 .visibility-tag .tag-icon {
   width: 14px;
   height: 14px;
+}
+
+/* 删除按钮 */
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.delete-btn .icon {
+  width: 18px;
+  height: 18px;
+  color: #dc2626;
 }
 
 /* Loading 状态 */

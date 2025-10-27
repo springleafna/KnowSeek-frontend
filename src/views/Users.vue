@@ -49,6 +49,8 @@ const handleDelete = async (user) => {
   } catch (error) {
     console.error('删除用户失败:', error)
     message.error('删除失败')
+  } finally {
+    message.success('删除用户成功')
   }
 }
 
@@ -59,6 +61,8 @@ const handleResetPassword = async (user) => {
   } catch (error) {
     console.error('重置密码失败:', error)
     message.error('重置失败')
+  } finally {
+    message.success('重置密码成功')
   }
 }
 

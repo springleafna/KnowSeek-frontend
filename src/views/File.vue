@@ -195,6 +195,11 @@
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
+                <button class="action-btn delete-btn" @click="handleDelete(file)" title="删除">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
               </div>
             </td>
           </tr>
@@ -236,10 +241,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { fileApi } from '@/api/fileApi';
-import { NPagination, useMessage } from 'naive-ui';
+import { NPagination, useMessage, useDialog } from 'naive-ui';
 
 // --- 初始化 ---
 const message = useMessage();
+const dialog = useDialog();
 
 // --- 响应式状态定义 ---
 const fileList = ref([]);
@@ -351,6 +357,24 @@ function formatDateTime(dateTimeStr) {
   } catch {
     return dateTimeStr;
   }
+}
+
+function handleDelete(file) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定要删除文件 "${file.fileName}" 吗？此操作无法撤销。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await fileApi.deleteFile(file.id)
+        message.success('文件删除成功')
+        fetchFileList()
+      } catch (error) {
+        message.error(error.message || '删除文件失败')
+      }
+    }
+  })
 }
 
 onMounted(() => {
@@ -750,6 +774,24 @@ onMounted(() => {
 
 .action-btn:hover svg {
   color: #1a73e8;
+}
+
+.action-btn.delete-btn {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.action-btn.delete-btn svg {
+  color: #dc2626;
+}
+
+.action-btn.delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.action-btn.delete-btn:hover svg {
+  color: #dc2626;
 }
 
 /* Loading 状态 */

@@ -44,11 +44,7 @@ export const userApi = {
     })
   },
   resetPassword(id) {
-    http.put('/user/resetPassword', {
-      params: {
-        id
-      }
-    })
+    http.put('/user/resetPassword', null, { params: { id } })
   }
 };
 

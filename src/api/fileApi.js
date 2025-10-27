@@ -124,6 +124,15 @@ export const fileApi = {
 
       fileReader.readAsArrayBuffer(chunk);
     });
+  },
+
+  /**
+   * 删除文件
+   * @param {number} id - 文件ID
+   * @returns {Promise}
+   */
+  deleteFile(id) {
+    return http.delete('/file/delete', { params: { id } });
   }
 };
 
