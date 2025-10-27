@@ -133,6 +133,15 @@ export const fileApi = {
    */
   deleteFile(id) {
     return http.delete('/file/delete', { params: { id } });
+  },
+
+  /**
+   * 下载文件
+   * @param {number} id - 文件ID
+   * @returns {Promise<string>} 返回文件下载URL
+   */
+  downloadFile(id) {
+    return http.get('/file/download', { params: { id } });
   }
 };
 

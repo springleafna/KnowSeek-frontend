@@ -109,11 +109,24 @@
                 </span>
               </td>
               <td>
-                <button class="delete-btn" @click="handleDelete(file)" :title="'删除文件'">
-                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
+                <div class="action-buttons">
+                  <button class="action-btn preview-btn" title="预览">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/>
+                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn download-btn" @click="handleDownload(file)" title="下载">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn delete-btn" @click="handleDelete(file)" title="删除文件">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -264,6 +277,23 @@ function handleDelete(file) {
       }
     }
   })
+}
+
+async function handleDownload(file) {
+  try {
+    const downloadUrl = await fileApi.downloadFile(file.id)
+    // 创建隐藏的 a 标签进行下载
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = file.name || '下载文件'
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    message.success('开始下载文件')
+  } catch (error) {
+    message.error(error.message || '下载文件失败')
+  }
 }
 
 watch(() => route.params.id, (id) => {
@@ -671,30 +701,57 @@ onMounted(() => {
 }
 
 /* 删除按钮 */
-.delete-btn {
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
+  border: 1px solid #e5e7eb;
+  background: white;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.delete-btn:hover {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+.action-btn .icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
 }
 
-.delete-btn .icon {
-  width: 18px;
-  height: 18px;
+.action-btn:hover {
+  border-color: #1a73e8;
+  background: #f0f7ff;
+  transform: translateY(-1px);
+}
+
+.action-btn:hover .icon {
+  color: #1a73e8;
+}
+
+.action-btn.delete-btn {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.action-btn.delete-btn .icon {
+  color: #dc2626;
+}
+
+.action-btn.delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.action-btn.delete-btn:hover .icon {
   color: #dc2626;
 }
 

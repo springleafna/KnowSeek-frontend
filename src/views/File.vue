@@ -190,7 +190,7 @@
                     <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2"/>
                   </svg>
                 </button>
-                <button class="action-btn download-btn" title="下载">
+                <button class="action-btn download-btn" @click="handleDownload(file)" title="下载">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -375,6 +375,23 @@ function handleDelete(file) {
       }
     }
   })
+}
+
+async function handleDownload(file) {
+  try {
+    const downloadUrl = await fileApi.downloadFile(file.id)
+    // 创建隐藏的 a 标签进行下载
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = file.fileName || '下载文件'
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    message.success('开始下载文件')
+  } catch (error) {
+    message.error(error.message || '下载文件失败')
+  }
 }
 
 onMounted(() => {

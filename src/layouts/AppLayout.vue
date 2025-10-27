@@ -6,7 +6,7 @@
           <img src="@/assets/icon/chat.png" alt="AI对话" class="menu-icon">
           <span class="menu-text">AI对话</span>
         </router-link>
-        <router-link to="/app/knowledge" class="menu-item" active-class="active">
+        <router-link to="/app/knowledge" class="menu-item" :class="{ active: isKnowledgeActive }">
           <img src="@/assets/icon/knowledgeBase.png" alt="知识库" class="menu-icon">
           <span class="menu-text">知识库</span>
         </router-link>
@@ -36,11 +36,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useRoute } from 'vue-router'
 
 const isCollapsed = ref(false)
 const authStore = useAuthStore()
+const route = useRoute()
+
+// 判断知识库菜单是否激活（包括详情页）
+const isKnowledgeActive = computed(() => {
+  return route.path.startsWith('/app/knowledge')
+})
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value

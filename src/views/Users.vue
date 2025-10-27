@@ -93,7 +93,27 @@ const columns = [
   },
   {
     title: '所属组织',
-    key: 'primaryOrgName'
+    key: 'primaryOrgName',
+    width: 120,
+  },
+  {
+    title: '注册时间',
+    key: 'createdAt',
+    width: 180,
+    render(row) {
+      if (!row.createdAt) return '-'
+      try {
+        const date = new Date(row.createdAt)
+        const y = date.getFullYear()
+        const m = String(date.getMonth() + 1).padStart(2, '0')
+        const d = String(date.getDate()).padStart(2, '0')
+        const hh = String(date.getHours()).padStart(2, '0')
+        const mm = String(date.getMinutes()).padStart(2, '0')
+        return `${y}-${m}-${d} ${hh}:${mm}`
+      } catch {
+        return row.createdAt
+      }
+    }
   },
   {
     title: '操作',
