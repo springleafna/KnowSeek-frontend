@@ -22,6 +22,10 @@
           <img src="@/assets/icon/user.png" alt="用户管理" class="menu-icon">
           <span class="menu-text">用户管理</span>
         </router-link>
+        <router-link to="/app/setting" class="menu-item" active-class="active">
+          <img src="@/assets/icon/user.png" alt="个人设置" class="menu-icon">
+          <span class="menu-text">个人设置</span>
+        </router-link>
       </nav>
       <button class="toggle-btn" @click="toggleSidebar" :title="isCollapsed ? '展开侧边栏' : '收起侧边栏'">
         <svg class="toggle-icon" :class="{ rotated: isCollapsed }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -18,8 +18,7 @@ const fetchUserInfo = async () => {
   }
   try {
     const res = await userApi.getUserInfo()
-    // 后端返回结构兼容：可能是 { data: { ... } } 或直接是 { ... }
-    user.value = res?.data?.data ?? res?.data ?? res ?? null
+    user.value = res
   } catch (error) {
     console.error('获取用户信息失败:', error.message)
   }

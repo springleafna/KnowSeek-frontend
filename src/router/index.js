@@ -8,6 +8,7 @@ import Organization from '@/views/Organization.vue'
 import Users from '@/views/Users.vue'
 import File from '@/views/File.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import Setting from '@/views/Setting.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
@@ -39,6 +40,7 @@ const router = createRouter({
         { path: 'organization', name: 'Organization', component: Organization },
         { path: 'users', name: 'Users', component: Users },
         { path: 'file', name: 'File', component: File },
+        { path: 'setting', name: 'Setting', component: Setting },
       ]
     }
   ],
