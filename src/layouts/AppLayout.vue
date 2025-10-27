@@ -14,11 +14,11 @@
           <img src="@/assets/icon/fileList.png" alt="文件列表" class="menu-icon">
           <span class="menu-text">文件列表</span>
         </router-link>
-        <router-link to="/app/organization" class="menu-item" active-class="active">
+        <router-link v-if="authStore.isAdmin" to="/app/organization" class="menu-item" active-class="active">
           <img src="@/assets/icon/organization.png" alt="组织管理" class="menu-icon">
           <span class="menu-text">组织管理</span>
         </router-link>
-        <router-link to="/app/users" class="menu-item" active-class="active">
+        <router-link v-if="authStore.isAdmin" to="/app/users" class="menu-item" active-class="active">
           <img src="@/assets/icon/user.png" alt="用户管理" class="menu-icon">
           <span class="menu-text">用户管理</span>
         </router-link>
@@ -37,8 +37,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const isCollapsed = ref(false)
+const authStore = useAuthStore()
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value

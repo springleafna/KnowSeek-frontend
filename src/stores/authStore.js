@@ -6,7 +6,10 @@ export const useAuthStore = defineStore('auth', () => {
   const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
   
   const isAuthenticated = computed(() => !!token.value)
-  
+
+  /* 判断是否为管理员 */
+  const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
+
   /* 设置token */
   const setToken = (newToken) => {
     token.value = newToken
@@ -48,6 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
     token: computed(() => token.value),
     userInfo: computed(() => userInfo.value),
     isAuthenticated,
+    isAdmin,
     setToken,
     setUserInfo,
     login,
