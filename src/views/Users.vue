@@ -43,9 +43,8 @@ const totalPages = ref(0)
 // 删除用户
 const handleDelete = async (user) => {
   try {
-    await userApi.deleteUser(user.id).then(res=>{
-         getUserList();
-    })
+    await userApi.deleteUser(user.id)
+    getUserList();
   } catch (error) {
     console.error('删除用户失败:', error)
     message.error('删除失败')
@@ -140,16 +139,24 @@ const columns = [
             default: () => `确定删除用户 ${row.username}？`
           }
         ),
-        // 重置密码按钮
+        // 重置密码按钮（带确认弹窗）
         h(
-          NButton,
+          NPopconfirm,
           {
-            size: 'small',
-            type: 'warning',
-            ghost: true,
-            onClick: () => handleResetPassword(row)
+            onPositiveClick: () => handleResetPassword(row),
+            negativeText: '取消',
+            positiveText: '确定',
+            placement: 'top'
           },
-          { default: () => '重置密码' }
+          {
+            trigger: () =>
+              h(
+                NButton,
+                { size: 'small', type: 'warning', ghost: true },
+                { default: () => '重置密码' }
+              ),
+            default: () => `确定重置用户 ${row.username} 的密码？`
+          }
         )
       ])
     }

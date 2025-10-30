@@ -15,15 +15,15 @@
           <span class="menu-text">文件列表</span>
         </router-link>
         <router-link v-if="authStore.isAdmin" to="/app/organization" class="menu-item" active-class="active">
-          <img src="@/assets/icon/organization.png" alt="组织管理" class="menu-icon">
+          <img src="@/assets/icon/users.png" alt="组织管理" class="menu-icon">
           <span class="menu-text">组织管理</span>
         </router-link>
         <router-link v-if="authStore.isAdmin" to="/app/users" class="menu-item" active-class="active">
-          <img src="@/assets/icon/user.png" alt="用户管理" class="menu-icon">
+          <img src="@/assets/icon/users.png" alt="用户管理" class="menu-icon">
           <span class="menu-text">用户管理</span>
         </router-link>
         <router-link to="/app/setting" class="menu-item" active-class="active">
-          <img src="@/assets/icon/user.png" alt="个人设置" class="menu-icon">
+          <img src="@/assets/icon/setting.png" alt="个人设置" class="menu-icon">
           <span class="menu-text">个人设置</span>
         </router-link>
       </nav>
