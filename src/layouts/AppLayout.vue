@@ -10,6 +10,10 @@
           <img src="@/assets/icon/send.png" alt="即时通讯" class="menu-icon">
           <span class="menu-text">即时通讯</span>
         </router-link>
+        <router-link to="/app/contacts" class="menu-item" active-class="active">
+          <img src="@/assets/icon/users.png" alt="通讯录" class="menu-icon">
+          <span class="menu-text">通讯录</span>
+        </router-link>
         <router-link to="/app/knowledge" class="menu-item" :class="{ active: isKnowledgeActive }">
           <img src="@/assets/icon/knowledgeBase.png" alt="知识库" class="menu-icon">
           <span class="menu-text">知识库</span>

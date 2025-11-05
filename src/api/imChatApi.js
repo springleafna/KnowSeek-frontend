@@ -166,4 +166,70 @@ export const imChatApi = {
   searchUsers(params) {
     return http.get('/im/users', { params });
   },
+
+  /**
+   * 获取联系人列表
+   * GET /im/contacts
+   * @returns {Promise<Array>} 联系人列表
+   */
+  getContacts() {
+    return http.get('/im/contacts');
+  },
+
+  /**
+   * 添加联系人
+   * POST /im/contacts
+   * @param {Object} params
+   * @param {string} params.userId - 用户ID
+   * @param {string} params.remark - 备注名称
+   * @param {Array<string>} params.tags - 标签列表
+   * @returns {Promise<Object>} 添加结果
+   */
+  addContact(params) {
+    return http.post('/im/contacts', params);
+  },
+
+  /**
+   * 更新联系人信息
+   * PUT /im/contacts/:id
+   * @param {string} contactId - 联系人ID
+   * @param {Object} params
+   * @param {string} params.remark - 备注名称
+   * @param {Array<string>} params.tags - 标签列表
+   * @param {boolean} params.starred - 是否星标
+   * @returns {Promise<Object>} 更新结果
+   */
+  updateContact(contactId, params) {
+    return http.put(`/im/contacts/${contactId}`, params);
+  },
+
+  /**
+   * 删除联系人
+   * DELETE /im/contacts/:id
+   * @param {string} contactId - 联系人ID
+   * @returns {Promise<Object>} 删除结果
+   */
+  deleteContact(contactId) {
+    return http.delete(`/im/contacts/${contactId}`);
+  },
+
+  /**
+   * 搜索联系人
+   * GET /im/contacts/search
+   * @param {Object} params
+   * @param {string} params.keyword - 搜索关键词
+   * @returns {Promise<Array>} 搜索结果
+   */
+  searchContacts(params) {
+    return http.get('/im/contacts/search', { params });
+  },
+
+  /**
+   * 获取星标联系人
+   * GET /im/contacts/starred
+   * @returns {Promise<Array>} 星标联系人列表
+   */
+  getStarredContacts() {
+    return http.get('/im/contacts/starred');
+  },
 };
