@@ -239,7 +239,7 @@ const handleUpload = async () => {
     })
     
     // 5. 检查是否已上传（秒传）
-    if (initResult.status) {
+    if (initResult.status === 0) {
       uploadStatus.progress = 100
       message.success('文件已存在，秒传成功！')
       uploadStatus.uploading = false

@@ -110,7 +110,7 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="action-btn preview-btn" title="预览">
+                  <button class="action-btn preview-btn" title="预览" @click="openDetail(file)">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/>
                       <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2"/>
@@ -160,6 +160,34 @@
       :knowledgeBaseId="kbId"
       @uploaded="handleFileUploaded"
     />
+    <n-modal v-model:show="detailVisible" preset="dialog" :title="currentFile ? `文件详情 - ${currentFile.name}` : '文件详情'" style="width: 800px;">
+      <div v-if="detailLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+      <div v-else class="detail-modal-content">
+        <div v-if="chunkDetails.length === 0" class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3>暂无分片内容</h3>
+          <p>该文件未返回分片文本</p>
+        </div>
+        <div v-else style="display: flex; flex-direction: column; gap: 12px;">
+          <div v-for="chunk in chunkDetails" :key="chunk.chunkIndex" class="chunk-card">
+            <div class="chunk-header">
+              <span class="chunk-index">分片 #{{ chunk.chunkIndex }}</span>
+            </div>
+            <div class="chunk-text">{{ chunk.chunkText }}</div>
+          </div>
+        </div>
+      </div>
+      <template #action>
+        <button class="refresh-btn" @click="detailVisible = false">
+          <span>关闭</span>
+        </button>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -182,6 +210,10 @@ const keyword = ref('')
 const files = ref([])
 const loading = ref(false)
 const showUploadModal = ref(false)
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const chunkDetails = ref([])
+const currentFile = ref(null)
 
 function goBack() {
   router.push({ name: 'Knowledge' })
@@ -293,6 +325,21 @@ async function handleDownload(file) {
     message.success('开始下载文件')
   } catch (error) {
     message.error(error.message || '下载文件失败')
+  }
+}
+
+async function openDetail(file) {
+  detailVisible.value = true
+  detailLoading.value = true
+  currentFile.value = file || null
+  try {
+    const list = await fileApi.getFileDetail(file.id)
+    chunkDetails.value = Array.isArray(list) ? list : []
+  } catch (error) {
+    message.error(error.message || '获取文件详情失败')
+    chunkDetails.value = []
+  } finally {
+    detailLoading.value = false
   }
 }
 
@@ -817,6 +864,38 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.detail-modal-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.chunk-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.chunk-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.chunk-index {
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.chunk-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #374151;
+  line-height: 1.6;
+}
+
 /* 响应式 */
 @media (max-width: 1200px) {
   .kb-detail {
@@ -836,4 +915,4 @@ onMounted(() => {
     width: 200px;
   }
 }
-</style> 
+</style>

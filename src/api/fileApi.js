@@ -143,6 +143,15 @@ export const fileApi = {
   downloadFile(id) {
     return http.get('/file/download', { params: { id } });
   }
+  ,
+  /**
+   * 获取文件的所有分片文本内容
+   * @param {number} fileId - 文件ID
+   * @returns {Promise<Array<{chunkIndex:number,chunkText:string}>>}
+   */
+  getFileDetail(fileId) {
+    return http.get('/file/getFileDetail', { params: { fileId } });
+  }
 };
 
 export default fileApi;
