@@ -3,8 +3,6 @@ import Landing from '@/views/Landing.vue'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
 import Chat from '@/views/Chat.vue'
-import ImChat from '@/views/ImChat.vue'
-import Contacts from '@/views/Contacts.vue'
 import Knowledge from '@/views/Knowledge.vue'
 import Organization from '@/views/Organization.vue'
 import Users from '@/views/Users.vue'
@@ -37,8 +35,6 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/app/chat' },
         { path: 'chat', name: 'Chat', component: Chat },
-        { path: 'imchat', name: 'ImChat', component: ImChat },
-        { path: 'contacts', name: 'Contacts', component: Contacts },
         { path: 'knowledge', name: 'Knowledge', component: Knowledge },
         { path: 'knowledge/:id', name: 'KnowledgeDetail', component: () => import('@/views/KnowledgeDetail.vue') },
         { path: 'organization', name: 'Organization', component: Organization },
