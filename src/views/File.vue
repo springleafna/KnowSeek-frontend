@@ -780,6 +780,10 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   border: 1px solid;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1;
+  gap: 6px;
 }
 
 .status-processing {

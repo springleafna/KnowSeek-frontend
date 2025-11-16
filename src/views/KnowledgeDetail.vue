@@ -696,6 +696,10 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   border: 1px solid;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1;
+  gap: 6px;
 }
 
 .status-tag.status-pending {
@@ -734,6 +738,9 @@ onMounted(() => {
   font-weight: 600;
   border-radius: 6px;
   border: 1px solid #fbbf24;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1;
 }
 
 .visibility-tag.public {
