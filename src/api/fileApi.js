@@ -63,6 +63,21 @@ export const fileApi = {
       knowledgeBaseId: params.knowledgeBaseId
     });
   },
+  pauseUpload(params) {
+    return http.post('/file/pause', {
+      uploadId: params.uploadId
+    });
+  },
+  resumeUpload(params) {
+    return http.post('/file/resume', {
+      uploadId: params.uploadId
+    });
+  },
+  cancelUpload(params) {
+    return http.post('/file/cancel', {
+      uploadId: params.uploadId
+    });
+  },
   
   /**
    * 计算文件MD5值（分块读取）

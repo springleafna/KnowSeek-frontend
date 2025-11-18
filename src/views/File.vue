@@ -158,7 +158,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="file in fileList" :key="file.id" class="file-row">
+          <tr v-for="file in fileList" :key="file.id" class="file-row" :class="{ 'row-canceled': isCanceledStatus(file.status) }">
             <td>
               <div class="file-name-cell">
                 <div class="file-icon-wrapper" :class="getFileIconClass(file.fileName)">
@@ -184,13 +184,13 @@
             </td>
             <td>
               <div class="action-buttons">
-                <button class="action-btn preview-btn" title="预览" @click="openDetail(file)">
+                <button class="action-btn preview-btn" title="预览" @click="openDetail(file)" :disabled="isCanceledStatus(file.status)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2"/>
                     <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2"/>
                   </svg>
                 </button>
-                <button class="action-btn download-btn" @click="handleDownload(file)" title="下载">
+                <button class="action-btn download-btn" @click="handleDownload(file)" title="下载" :disabled="isCanceledStatus(file.status)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -376,6 +376,11 @@ function getStatusClass(status) {
   if (status === '上传完成' || status === '处理完成') return 'status-completed';
   if (status === '失败') return 'status-failed';
   return 'status-default';
+}
+
+function isCanceledStatus(status) {
+  if (!status) return false;
+  return String(status).includes('取消');
 }
 
 function formatDateTime(dateTimeStr) {
@@ -669,6 +674,13 @@ onMounted(() => {
 .file-row:hover {
   background: #f9fafb;
 }
+.file-row.row-canceled {
+  opacity: 0.6;
+  background: #f3f4f6;
+}
+.file-row.row-canceled:hover {
+  background: #f3f4f6;
+}
 
 /* 文件名单元格 */
 .file-name-cell {
@@ -863,6 +875,12 @@ onMounted(() => {
 
 .action-btn.delete-btn:hover svg {
   color: #dc2626;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Loading 状态 */

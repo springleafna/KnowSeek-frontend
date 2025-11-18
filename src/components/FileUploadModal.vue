@@ -51,13 +51,13 @@
     </n-space>
 
     <!-- 上传进度卡片 -->
-    <n-card v-if="uploadStatus.uploading" title="上传进度" style="margin-top: 1rem;" :bordered="false">
+    <n-card v-if="uploadStatus.uploading || uploadStatus.paused" title="上传进度" style="margin-top: 1rem;" :bordered="false">
       <n-space vertical>
         <n-progress 
           type="line" 
           :percentage="uploadStatus.progress"
           :show-indicator="true"
-          processing
+          :processing="uploadStatus.uploading"
         />
         
         <n-descriptions :column="2" size="small">
@@ -73,6 +73,9 @@
           <n-descriptions-item label="分片大小">
             {{ (uploadStatus.chunkSize / 1024 / 1024).toFixed(1) }}MB
           </n-descriptions-item>
+          <n-descriptions-item label="状态">
+            {{ uploadStatus.paused ? '已暂停' : '上传中' }}
+          </n-descriptions-item>
         </n-descriptions>
       </n-space>
     </n-card>
@@ -86,8 +89,26 @@
       <n-space>
         <n-button @click="handleCancel">取消</n-button>
         <n-button 
+          v-if="uploadStatus.uploading && !uploadStatus.paused"
+          tertiary
+          :disabled="!uploadStatus.uploadId"
+          @click="handlePause"
+        >暂停</n-button>
+        <n-button 
+          v-if="uploadStatus.paused"
+          tertiary
+          :disabled="!uploadStatus.uploadId || !selectedFile"
+          @click="handleResume"
+        >继续</n-button>
+        <n-button 
+          v-if="uploadStatus.uploading || uploadStatus.paused"
+          quaternary
+          :disabled="!uploadStatus.uploadId"
+          @click="handleCancelUpload"
+        >取消上传</n-button>
+        <n-button 
           type="primary"
-          :disabled="!selectedFile || uploadStatus.uploading" 
+          :disabled="!selectedFile || uploadStatus.uploading || uploadStatus.paused" 
           :loading="uploadStatus.uploading"
           @click="handleUpload"
         >
@@ -153,7 +174,9 @@ const uploadStatus = reactive({
   chunkSize: 0, 
   maxConcurrency: 3, // 最大并发数
   uploadedChunks: new Set(),
-  error: ''
+  error: '',
+  paused: false,
+  canceled: false
 })
 
 const resetForm = () => {
@@ -167,6 +190,8 @@ const resetForm = () => {
   uploadStatus.chunkSize = 0
   uploadStatus.uploadedChunks.clear()
   uploadStatus.error = ''
+  uploadStatus.paused = false
+  uploadStatus.canceled = false
 }
 
 const onFileChange = ({ fileList }) => {
@@ -177,6 +202,53 @@ const onFileChange = ({ fileList }) => {
 
 const handleCancel = () => {
   emit('update:show', false)
+}
+
+const abortControllers = ref(new Map())
+
+const handlePause = async () => {
+  if (!uploadStatus.uploading || uploadStatus.paused || !uploadStatus.uploadId) return
+  uploadStatus.paused = true
+  try { await fileApi.pauseUpload({ uploadId: uploadStatus.uploadId }) } catch {}
+  abortControllers.value.forEach((c) => { try { c.abort() } catch {} })
+  uploadStatus.uploading = false
+}
+
+const handleResume = async () => {
+  if (!uploadStatus.paused || !selectedFile.value || !uploadStatus.uploadId) return
+  let resumeInit
+  try { resumeInit = await fileApi.resumeUpload({ uploadId: uploadStatus.uploadId }) } catch (e) { uploadStatus.error = e.message || '恢复上传失败'; message.error(uploadStatus.error); return }
+  uploadStatus.paused = false
+  uploadStatus.uploading = true
+  try {
+    await uploadChunks(selectedFile.value, resumeInit.partUploadUrls)
+    if (!uploadStatus.paused && !uploadStatus.canceled) {
+      await fileApi.completeUpload({
+        uploadId: uploadStatus.uploadId,
+        fileName: selectedFile.value.name,
+        chunkTotalSize: uploadStatus.totalChunks,
+        knowledgeBaseId: props.knowledgeBaseId
+      })
+      message.success('文件上传成功！')
+      emit('uploaded')
+      emit('update:show', false)
+    }
+  } catch (error) {
+    if (uploadStatus.paused || uploadStatus.canceled) return
+    uploadStatus.error = error.message || '上传失败'
+    message.error(`上传失败: ${uploadStatus.error}`)
+  } finally {
+    uploadStatus.uploading = false
+  }
+}
+
+const handleCancelUpload = async () => {
+  if (!uploadStatus.uploadId) { resetForm(); return }
+  uploadStatus.canceled = true
+  try { await fileApi.cancelUpload({ uploadId: uploadStatus.uploadId }) } catch {}
+  abortControllers.value.forEach((c) => { try { c.abort() } catch {} })
+  abortControllers.value.clear()
+  resetForm()
 }
 
 /**
@@ -254,6 +326,7 @@ const handleUpload = async () => {
     // 7. 开始分片上传
     await uploadChunks(file, initResult.partUploadUrls)
     
+    if (uploadStatus.paused || uploadStatus.canceled) return
     // 8. 完成上传（携带知识库ID）
     await fileApi.completeUpload({
       uploadId: uploadStatus.uploadId,
@@ -274,7 +347,6 @@ const handleUpload = async () => {
     message.error(`上传失败: ${uploadStatus.error}`)
   } finally {
     uploadStatus.uploading = false
-    uploadStatus.progress = 0
   }
 }
 
@@ -300,71 +372,64 @@ const asyncPool = async (concurrency, tasks) => {
 
 // 上传所有分片
 const uploadChunks = async (file, partUploadUrls) => {
-  const maxConcurrency = uploadStatus.maxConcurrency;
-  const uploadTasks = [];
-  
-  for (let i = 0; i < uploadStatus.totalChunks; i++) {
-    const chunkIndex = i + 1;
-    const start = i * uploadStatus.chunkSize;
-    const end = Math.min(file.size, start + uploadStatus.chunkSize);
-    const chunk = file.slice(start, end);
+  const maxConcurrency = uploadStatus.maxConcurrency
+  const keys = partUploadUrls ? Object.keys(partUploadUrls) : []
+  let indices = keys.length ? keys.map((k) => Number(k)).sort((a, b) => a - b) : Array.from({ length: uploadStatus.totalChunks }, (_, i) => i + 1)
+  indices = indices.filter((idx) => !uploadStatus.uploadedChunks.has(idx))
+  const queue = [...indices]
+  const executing = new Set()
+  const failures = []
 
-    const url = partUploadUrls?.[chunkIndex] || partUploadUrls?.[String(chunkIndex)];
-    if (!url) {
-      throw new Error(`缺少分片 ${chunkIndex} 的预签名URL`);
-    }
-    
-    const uploadChunk = async () => {
+  const startOne = (idx) => {
+    const i = idx - 1
+    const start = i * uploadStatus.chunkSize
+    const end = Math.min(file.size, start + uploadStatus.chunkSize)
+    const chunk = file.slice(start, end)
+    const url = partUploadUrls?.[idx] || partUploadUrls?.[String(idx)]
+    if (!url) throw new Error(`缺少分片 ${idx} 的预签名URL`)
+    const controller = new AbortController()
+    abortControllers.value.set(idx, controller)
+    const p = (async () => {
       try {
-        const response = await fetch(url, {
-          method: 'PUT',
-          body: chunk,
-        });
-
+        const response = await fetch(url, { method: 'PUT', body: chunk, signal: controller.signal })
         if (!response.ok) {
-          const text = await response.text().catch(() => '');
-          throw new Error(`OSS直传失败（分片${chunkIndex}）：${response.status} ${response.statusText} ${text}`);
+          const text = await response.text().catch(() => '')
+          throw new Error(`OSS直传失败（分片${idx}）：${response.status} ${response.statusText} ${text}`)
         }
-
-        let eTag = response.headers.get('ETag') || response.headers.get('etag') || '';
-        if (eTag) {
-          eTag = eTag.replace(/^\"|\"$/g, '');
-        } else {
-          console.warn('未获取到 ETag');
-        }
-        console.log('ETag(分片' + chunkIndex + '):', eTag);
-
-        await fileApi.uploadChunk({
-          uploadId: uploadStatus.uploadId,
-          chunkIndex: chunkIndex,
-          ETag: eTag,
-          chunkSize: chunk.size
-        });
-        
-        uploadStatus.uploadedChunks.add(i);
-        updateTotalProgress();
-        
-        return { success: true, chunkIndex, eTag };
-      } catch (error) {
-        console.error(`分片${chunkIndex}上传失败:`, error);
-        return { success: false, chunkIndex, error: error.message };
+        let eTag = response.headers.get('ETag') || response.headers.get('etag') || ''
+        if (eTag) eTag = eTag.replace(/^\"|\"$/g, '')
+        await fileApi.uploadChunk({ uploadId: uploadStatus.uploadId, chunkIndex: idx, ETag: eTag, chunkSize: chunk.size })
+        uploadStatus.uploadedChunks.add(idx)
+        updateTotalProgress()
+      } catch (e) {
+        if (controller.signal.aborted || uploadStatus.paused || uploadStatus.canceled) return
+        failures.push({ chunkIndex: idx, error: e.message })
+      } finally {
+        abortControllers.value.delete(idx)
+        executing.delete(p)
       }
-    };
-    
-    uploadTasks.push(uploadChunk);
+    })()
+    executing.add(p)
   }
-  
-  const results = await asyncPool(maxConcurrency, uploadTasks);
-  
-  const failedChunks = results.filter(result => !result.success);
-  
-  if (failedChunks.length > 0) {
-    const errorMessages = failedChunks.map(chunk => `分片${chunk.chunkIndex}: ${chunk.error}`).join(', ');
-    throw new Error(`以下分片上传失败: ${errorMessages}`);
+
+  while (queue.length && !uploadStatus.paused && !uploadStatus.canceled) {
+    while (executing.size < maxConcurrency && queue.length && !uploadStatus.paused && !uploadStatus.canceled) {
+      const next = queue.shift()
+      startOne(next)
+    }
+    if (executing.size === 0) break
+    await Promise.race(Array.from(executing))
   }
-  
-  return { success: true };
-};
+
+  await Promise.all(Array.from(executing))
+
+  if (uploadStatus.paused || uploadStatus.canceled) return { success: false }
+  if (failures.length > 0) {
+    const errorMessages = failures.map((c) => `分片${c.chunkIndex}: ${c.error}`).join(', ')
+    throw new Error(`以下分片上传失败: ${errorMessages}`)
+  }
+  return { success: true }
+}
 
 // 更新总体上传进度
 const updateTotalProgress = () => {
