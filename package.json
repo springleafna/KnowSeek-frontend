@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vicons/ionicons5": "^0.13.0",
     "axios": "^1.11.0",
     "highlight.js": "^11.11.1",
     "marked": "^16.2.1",
