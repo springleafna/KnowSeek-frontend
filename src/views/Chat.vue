@@ -148,6 +148,13 @@
             </n-space>
             <div ref="chatBodyBottomRef" style="height: 1px;"></div>
           </div>
+          <n-button
+            v-if="!autoScrollEnabled && messages.length > 0"
+            class="scroll-to-bottom"
+            type="primary"
+            size="small"
+            @click="handleScrollToBottomClick"
+          >回到底部</n-button>
         </div>
 
         <!-- 固定在底部的输入区域 -->
@@ -206,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick, h } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, h } from 'vue'
 import { useDialog } from 'naive-ui'
 import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
@@ -297,6 +304,8 @@ const inputAreaRef = ref(null)
 
 const streamingText = ref('')
 let streamCtrl = null
+
+const autoScrollEnabled = ref(true)
 
 // 知识库开关颜色设置
 // 自定义轨道样式
@@ -422,21 +431,31 @@ async function handleSessionMenuSelect(key) {
   }
 }
 
-function scrollToBottom() {
+function scrollToBottom(force = false) {
   nextTick(() => {
-    // 直接滚动聊天区域到底部
     const chatBody = chatBodyRef.value
     if (chatBody) {
+      if (!force && !autoScrollEnabled.value) return
       chatBody.scrollTop = chatBody.scrollHeight
       return
     }
-
-    // 备用方案：使用scrollIntoView滚动到底部标记
     const bottom = chatBodyBottomRef.value
     if (bottom && typeof bottom.scrollIntoView === 'function') {
+      if (!force && !autoScrollEnabled.value) return
       bottom.scrollIntoView({ behavior: 'smooth', block: 'end' })
     }
   })
+}
+
+function handleChatBodyScroll() {
+  const el = chatBodyRef.value
+  if (!el) return
+  autoScrollEnabled.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 10
+}
+
+function handleScrollToBottomClick() {
+  autoScrollEnabled.value = true
+  scrollToBottom(true)
 }
 
 async function loadSessions() {
@@ -481,15 +500,16 @@ async function loadSessionDetail(id) {
 
     // 多次尝试滚动到底部，确保DOM渲染完成
     await nextTick()
-    scrollToBottom()
+    autoScrollEnabled.value = true
+    scrollToBottom(true)
 
     // 延迟再次滚动，确保内容完全加载
     setTimeout(() => {
-      scrollToBottom()
+      scrollToBottom(true)
     }, 100)
 
     setTimeout(() => {
-      scrollToBottom()
+      scrollToBottom(true)
     }, 300)
   } catch (e) {
     console.error('获取会话详情失败', e)
@@ -603,7 +623,8 @@ async function handleSend(stream) {
 
   messages.value.push({ role: 'user', message: text, timestamp: new Date() })
   inputText.value = ''
-  scrollToBottom()
+  autoScrollEnabled.value = true
+  scrollToBottom(true)
 
   if (!stream) {
     loading.sending = true
@@ -733,6 +754,16 @@ onMounted(async () => {
   if (activeSessionId.value) {
     await loadSessionDetail(activeSessionId.value)
   }
+  const el = chatBodyRef.value
+  if (el) {
+    el.addEventListener('scroll', handleChatBodyScroll)
+    autoScrollEnabled.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 10
+  }
+})
+
+onUnmounted(() => {
+  const el = chatBodyRef.value
+  if (el) el.removeEventListener('scroll', handleChatBodyScroll)
 })
 </script>
 
@@ -750,6 +781,7 @@ onMounted(async () => {
   padding-bottom: 20px; /* 为固定输入框预留足够空间 */
   min-height: 0; /* 重要：允许flex子元素收缩 */
   background: #f7f8fa;
+  position: relative;
 }
 
 .chat-header {
@@ -1047,5 +1079,12 @@ onMounted(async () => {
 
 .session-cards {
   padding-right: 2px; /* 防止内容贴边 */
+}
+
+.scroll-to-bottom {
+  position: absolute;
+  right: 24px;
+  bottom: 210px;
+  z-index: 200;
 }
 </style>
