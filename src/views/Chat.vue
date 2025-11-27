@@ -8,21 +8,32 @@
         :width="300"
         show-trigger
         content-style="padding: 0; display: flex; flex-direction: column;"
+        v-model:collapsed="siderCollapsed"
       >
-        <div style="padding: 16px; display: flex; flex-direction: column; height: 100%;">
+        <div ref="siderContentRef" style="padding: 16px; display: flex; flex-direction: column; height: 100%;">
           <div style="flex-shrink: 0; margin-bottom: 16px;">
-            <n-space justify="space-between" align="center">
-              <n-h3 :depth="3" style="margin: 0;">会话</n-h3>
+            <div class="session-header">
+              <n-h3 v-if="!isSiderUltraCompact" class="session-title" :depth="3" style="margin: 0;">会话</n-h3>
               <n-button
+                class="session-new-btn"
                 round
-                size="small"
+                :size="isSiderCompact ? 'tiny' : 'small'"
                 @click="handleCreateSession"
                 :loading="loading.sessions"
                 color="#387BE9"
               >
-                新建
+                <template v-if="isSiderUltraCompact">
+                  <n-icon :size="16">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </n-icon>
+                </template>
+                <template v-else>
+                  新建
+                </template>
               </n-button>
-            </n-space>
+            </div>
           </div>
 
           <div class="session-list-wrapper">
@@ -62,7 +73,7 @@
                       </n-button>
                     </n-dropdown>
                   </template>
-                  <n-text depth="3" :style="{ fontSize: '12px' }">
+                  <n-text depth="3" class="session-time" :style="{ fontSize: '12px' }">
                     {{ formatTime(item.updatedAt || item.createdAt) }}
                   </n-text>
                 </n-card>
@@ -306,6 +317,11 @@ const streamingText = ref('')
 let streamCtrl = null
 
 const autoScrollEnabled = ref(true)
+const siderCollapsed = ref(false)
+const siderContentRef = ref(null)
+const isSiderCompact = ref(false)
+const isSiderUltraCompact = ref(false)
+let siderResizeObserver = null
 
 // 知识库开关颜色设置
 // 自定义轨道样式
@@ -759,11 +775,24 @@ onMounted(async () => {
     el.addEventListener('scroll', handleChatBodyScroll)
     autoScrollEnabled.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 10
   }
+  const siderEl = siderContentRef.value
+  if (siderEl && typeof ResizeObserver !== 'undefined') {
+    siderResizeObserver = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width || 0
+      isSiderCompact.value = w <= 240
+      isSiderUltraCompact.value = w <= 180
+    })
+    siderResizeObserver.observe(siderEl)
+  }
 })
 
 onUnmounted(() => {
   const el = chatBodyRef.value
   if (el) el.removeEventListener('scroll', handleChatBodyScroll)
+  if (siderResizeObserver) {
+    try { siderResizeObserver.disconnect() } catch {}
+    siderResizeObserver = null
+  }
 })
 </script>
 
@@ -1079,6 +1108,44 @@ onUnmounted(() => {
 
 .session-cards {
   padding-right: 2px; /* 防止内容贴边 */
+}
+
+/* 保持会话卡片在侧栏缩放时高度稳定，不随宽度变化而增高 */
+.session-cards :deep(.n-card) {
+  min-height: 56px;
+  overflow: hidden;
+}
+
+.session-cards :deep(.n-card__header) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-time {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  min-height: 28px;
+}
+
+.session-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-new-btn {
+  flex-shrink: 0;
 }
 
 .scroll-to-bottom {
