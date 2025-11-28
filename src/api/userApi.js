@@ -59,6 +59,20 @@ export const userApi = {
     })
   },
   /**
+   * 用户修改密码
+   * @param {Object} params
+   * @param {string} params.oldPassword
+   * @param {string} params.newPassword
+   * @param {string} params.confirmPassword
+   */
+  updatePassword(params) {
+    return http.put('/user/updatePassword', {
+      oldPassword: params.oldPassword,
+      newPassword: params.newPassword,
+      confirmPassword: params.confirmPassword,
+    })
+  },
+  /**
    * 更新个人资料
    * @param {Object} data - 个人资料数据
    * @param {string} data.nickname - 昵称

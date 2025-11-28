@@ -285,7 +285,11 @@ const handleChangePassword = async () => {
   try {
     await passwordFormRef.value?.validate()
     passwordLoading.value = true
-    await userApi.changePassword({ oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword })
+    await userApi.updatePassword({
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword,
+      confirmPassword: passwordForm.confirmPassword
+    })
     message.success('密码修改成功，请重新登录')
     setTimeout(() => { authStore.logout(); window.location.href = '/login' }, 1500)
   } catch (e) {

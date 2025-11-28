@@ -15,51 +15,57 @@
           size="large"
           class="register-form"
         >
-          <div class="form-group">
-            <label>用户名</label>
-            <div class="input-wrapper">
-              <img src="@/assets/icon/username.png" alt="username" class="input-icon" />
-              <n-input
-                v-model:value="model.username"
-                placeholder="请输入用户名"
-                :disabled="loading"
-                :bordered="false"
-                class="custom-input"
-              />
+          <n-form-item path="username" :show-label="false" class="form-group-item">
+            <div class="form-group">
+              <label>用户名</label>
+              <div class="input-wrapper">
+                <img src="@/assets/icon/username.png" alt="username" class="input-icon" />
+                <n-input
+                  v-model:value="model.username"
+                  placeholder="请输入用户名"
+                  :disabled="loading"
+                  :bordered="false"
+                  class="custom-input"
+                />
+              </div>
             </div>
-          </div>
+          </n-form-item>
 
-          <div class="form-group">
-            <label>密码</label>
-            <div class="input-wrapper">
-              <img src="@/assets/icon/password.png" alt="password" class="input-icon" />
-              <n-input
-                v-model:value="model.password"
-                type="password"
-                placeholder="请输入密码"
-                :disabled="loading"
-                show-password-on="mousedown"
-                :bordered="false"
-                class="custom-input"
-              />
+          <n-form-item path="password" :show-label="false" class="form-group-item">
+            <div class="form-group">
+              <label>密码</label>
+              <div class="input-wrapper">
+                <img src="@/assets/icon/password.png" alt="password" class="input-icon" />
+                <n-input
+                  v-model:value="model.password"
+                  type="password"
+                  placeholder="请输入密码"
+                  :disabled="loading"
+                  show-password-on="mousedown"
+                  :bordered="false"
+                  class="custom-input"
+                />
+              </div>
             </div>
-          </div>
+          </n-form-item>
 
-          <div class="form-group">
-            <label>确认密码</label>
-            <div class="input-wrapper">
-              <img src="@/assets/icon/password.png" alt="password" class="input-icon" />
-              <n-input
-                v-model:value="model.confirmPassword"
-                type="password"
-                placeholder="请再次输入密码"
-                :disabled="loading"
-                show-password-on="mousedown"
-                :bordered="false"
-                class="custom-input"
-              />
+          <n-form-item path="confirmPassword" :show-label="false" class="form-group-item">
+            <div class="form-group">
+              <label>确认密码</label>
+              <div class="input-wrapper">
+                <img src="@/assets/icon/password.png" alt="password" class="input-icon" />
+                <n-input
+                  v-model:value="model.confirmPassword"
+                  type="password"
+                  placeholder="请再次输入密码"
+                  :disabled="loading"
+                  show-password-on="mousedown"
+                  :bordered="false"
+                  class="custom-input"
+                />
+              </div>
             </div>
-          </div>
+          </n-form-item>
 
           <div class="form-actions">
             <div class="terms-section">
@@ -205,8 +211,21 @@ const handleRegister = async () => {
   margin-bottom: 1.5rem;
 }
 
+.form-group-item {
+  margin-bottom: 0;
+}
+
+.form-group-item :deep(.n-form-item-blank) {
+  display: block;
+}
+
+.form-group-item :deep(.n-form-item-feedback-wrapper) {
+  min-height: 22px;
+  padding-top: 4px;
+}
+
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 
 .form-group label {
