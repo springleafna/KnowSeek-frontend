@@ -9,6 +9,7 @@ import Users from '@/views/Users.vue'
 import File from '@/views/File.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Setting from '@/views/Setting.vue'
+import OperationLog from '@/views/OperationLog.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
@@ -41,6 +42,7 @@ const router = createRouter({
         { path: 'users', name: 'Users', component: Users },
         { path: 'file', name: 'File', component: File },
         { path: 'setting', name: 'Setting', component: Setting },
+        { path: 'operation-log', name: 'OperationLog', component: OperationLog },
       ]
     }
   ],

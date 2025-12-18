@@ -22,6 +22,10 @@
           <img src="@/assets/icon/users.png" alt="用户管理" class="menu-icon">
           <span class="menu-text">用户管理</span>
         </router-link>
+        <router-link v-if="authStore.isAdmin" to="/app/operation-log" class="menu-item" active-class="active">
+          <img src="@/assets/icon/setting.png" alt="操作日志" class="menu-icon">
+          <span class="menu-text">操作日志</span>
+        </router-link>
         <router-link to="/app/setting" class="menu-item" active-class="active">
           <img src="@/assets/icon/setting.png" alt="个人设置" class="menu-icon">
           <span class="menu-text">个人设置</span>
