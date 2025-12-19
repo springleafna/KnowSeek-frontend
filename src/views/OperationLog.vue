@@ -25,6 +25,13 @@
           :options="responseResultOptions"
           style="width: 120px"
         />
+        <n-select
+          v-model:value="searchForm.roleName"
+          placeholder="角色"
+          clearable
+          :options="roleNameOptions"
+          style="width: 120px"
+        />
         <n-date-picker
           v-model:value="dateRange"
           type="datetimerange"
@@ -106,7 +113,8 @@ const calcTableHeight = () => {
 const searchForm = ref({
   moduleName: '',
   operationType: null,
-  responseResult: null
+  responseResult: null,
+  roleName: null
 })
 
 // 操作类型选项
@@ -128,6 +136,12 @@ const operationTypeOptions = [
 const responseResultOptions = [
   { label: '成功', value: 'success' },
   { label: '失败', value: 'fail' }
+]
+
+// 角色选项
+const roleNameOptions = [
+  { label: '管理员', value: 'ADMIN' },
+  { label: '普通用户', value: 'USER' }
 ]
 
 // 格式化日期时间
@@ -163,14 +177,20 @@ const formatDateForRequest = (timestamp) => {
 // 表格列配置
 const columns = [
   {
-    title: 'ID',
-    key: 'id',
-    width: 80
-  },
-  {
     title: '用户ID',
     key: 'userId',
-    width: 80
+    width: 80,
+    render(row) {
+      return row.userId === 0 ? '未登录' : row.userId
+    }
+  },
+  {
+    title: '角色',
+    key: 'roleName',
+    width: 80,
+    render(row) {
+      return row.roleName === null ? '未登录' : row.roleName
+    }
   },
   {
     title: '模块名称',
@@ -231,6 +251,24 @@ const columns = [
     }
   },
   {
+    title: '请求参数',
+    key: 'requestParams',
+    width: 200,
+    ellipsis: {
+      tooltip: true
+    },
+    render(row) {
+      if (!row.requestParams) return '-'
+      try {
+        return typeof row.requestParams === 'string'
+          ? row.requestParams
+          : JSON.stringify(row.requestParams)
+      } catch {
+        return row.requestParams
+      }
+    }
+  },
+  {
     title: 'IP地址',
     key: 'ipAddress',
     width: 130
@@ -246,6 +284,17 @@ const columns = [
         { type: isSuccess ? 'success' : 'error', size: 'small' },
         { default: () => isSuccess ? '成功' : '失败' }
       )
+    }
+  },
+  {
+    title: '响应信息',
+    key: 'responseMessage',
+    width: 150,
+    ellipsis: {
+      tooltip: true
+    },
+    render(row) {
+      return row.responseMessage === null ? '无' : row.responseMessage
     }
   },
   {
@@ -290,6 +339,9 @@ const getLogList = async () => {
     if (searchForm.value.responseResult) {
       params.responseResult = searchForm.value.responseResult
     }
+    if (searchForm.value.roleName) {
+      params.roleName = searchForm.value.roleName
+    }
     if (dateRange.value && dateRange.value.length === 2) {
       params.startTime = formatDateForRequest(dateRange.value[0])
       params.endTime = formatDateForRequest(dateRange.value[1])
@@ -322,7 +374,8 @@ const handleReset = () => {
   searchForm.value = {
     moduleName: '',
     operationType: null,
-    responseResult: null
+    responseResult: null,
+    roleName: null
   }
   dateRange.value = null
   currentPage.value = 1

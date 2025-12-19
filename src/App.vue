@@ -1,6 +1,5 @@
 <script setup>
-import { lightTheme } from 'naive-ui'
-import { zhCN } from 'naive-ui'
+import { lightTheme, zhCN, dateZhCN } from 'naive-ui'
 import AppHeader from '@/components/AppHeader.vue'
 
 const themeOverrides = {
@@ -30,7 +29,7 @@ const themeOverrides = {
     :theme="lightTheme"
     :theme-overrides="themeOverrides"
     :locale="zhCN"
-    :date-locale="zhCN.dateLocale"
+    :date-locale="dateZhCN"
   >
     <n-message-provider>
       <n-dialog-provider>
