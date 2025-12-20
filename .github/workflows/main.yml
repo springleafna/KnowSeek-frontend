@@ -1,0 +1,48 @@
+name: Deploy Vue to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Build Project
+        run: |
+          npm install
+          npm run build
+
+      # 通过 SSH 远程清理目标目录
+      - name: Clear Remote Directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASS }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            # 强制清空目标文件夹下的所有内容，确保没有旧文件残留
+            rm -rf /data/project/knowseek/frontend/*
+
+      # 将打包好的 dist 目录内容传输过去
+      - name: Copy files to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASS }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "dist/*"
+          target: "/data/project/knowseek/frontend"
+          strip_components: 1 # 这样会跳过 dist 文件夹本身，只拷贝里面的内容
